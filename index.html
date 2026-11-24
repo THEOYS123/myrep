@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="id" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MY REP WiFi Voucher</title>
+    <meta
+      name="description"
+      content="Platform pembuat QR Code WiFi standar dan desain kartu voucher WiFi profesional bermerek MY REP."
+    />
+    <meta property="og:title" content="MY REP WiFi Voucher" />
+    <meta
+      property="og:description"
+      content="Platform pembuat QR Code WiFi standar dan desain kartu voucher WiFi profesional bermerek MY REP."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./style.css" />
+    <script
+      src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"
+      defer
+    ></script>
+    <script src="./script.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell" id="app-shell">
+      <!-- Mobile Backdrop -->
+      <div class="sidebar-backdrop" id="sidebar-backdrop" aria-hidden="true"></div>
+
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar" id="sidebar" aria-label="Navigasi Utama">
+        <div class="sidebar-brand">
+          <a href="#dashboard" class="brand-lockup" data-nav="dashboard">
+            <span class="brand-mark" aria-hidden="true">
+              <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
+                <rect width="36" height="36" rx="9" fill="#102544" />
+                <rect x="0.75" y="0.75" width="34.5" height="34.5" rx="8.25" stroke="#22D3EE" stroke-opacity="0.35" stroke-width="1.5" />
+                <path d="M9.5 16.5C14.2 11.8 21.8 11.8 26.5 16.5" stroke="#22D3EE" stroke-width="2.4" stroke-linecap="round" />
+                <path d="M13 20.5C15.8 17.7 20.2 17.7 23 20.5" stroke="#3B82F6" stroke-width="2.4" stroke-linecap="round" />
+                <circle cx="18" cy="24.75" r="2.25" fill="#FFFFFF" />
+              </svg>
+            </span>
+            <span class="brand-text-group">
+              <span class="brand-wordmark">MY REP</span>
+              <span class="brand-sub">WiFi Voucher</span>
+            </span>
+          </a>
+          <button
+            type="button"
+            class="icon-btn sidebar-close-btn"
+            id="sidebar-close-btn"
+            aria-label="Tutup menu navigasi"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <nav class="sidebar-nav" aria-label="Menu Aplikasi">
+          <button type="button" class="nav-item is-active" data-view="dashboard">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="9" rx="1.5" />
+              <rect x="14" y="3" width="7" height="5" rx="1.5" />
+              <rect x="14" y="12" width="7" height="9" rx="1.5" />
+              <rect x="3" y="16" width="7" height="5" rx="1.5" />
+            </svg>
+            <span>Dashboard</span>
+          </button>
+
+          <button type="button" class="nav-item" data-view="qr-generator">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <path d="M14 14h3v3h-3z" />
+              <path d="M17 17h4v4h-4z" />
+              <path d="M14 20h1" />
+              <path d="M20 14h1" />
+            </svg>
+            <span>Buat QR WiFi</span>
+          </button>
+
+          <button type="button" class="nav-item" data-view="voucher-designer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="5" width="20" height="14" rx="2" />
+              <line x1="2" y1="10" x2="22" y2="10" />
+              <line x1="6" y1="15" x2="10" y2="15" />
+            </svg>
+            <span>Voucher Designer</span>
+          </button>
+
+          <button type="button" class="nav-item" data-view="history">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <polyline points="12 7 12 12 15.5 14" />
+            </svg>
+            <span>Riwayat Desain</span>
+            <span class="nav-count tabular-nums" id="nav-history-count">0</span>
+          </button>
+
+          <button type="button" class="nav-item" data-view="guide">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+            <span>Panduan Penggunaan</span>
+          </button>
+
+          <button type="button" class="nav-item" data-view="about">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span>Tentang MY REP</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <p class="sidebar-tagline">Connect Smarter, Stay Connected.</p>
+          <p class="sidebar-privacy">100% Lokal di Browser</p>
+        </div>
+      </aside>
+
+      <!-- Main Workspace -->
+      <div class="workspace">
+        <!-- Top Header Bar -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <button
+              type="button"
+              class="icon-btn mobile-menu-btn"
+              id="mobile-menu-btn"
+              aria-label="Buka menu navigasi"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <div class="topbar-breadcrumb">
+              <span class="breadcrumb-root">MY REP WiFi Voucher</span>
+              <span class="breadcrumb-sep" aria-hidden="true">/</span>
+              <h1 class="breadcrumb-current" id="topbar-title">Dashboard</h1>
+            </div>
+          </div>
+
+          <div class="topbar-actions">
+            <button
+              type="button"
+              class="btn btn-ghost theme-toggle-btn"
+              id="theme-toggle-btn"
+              aria-label="Ganti tema tampilan"
+            >
+              <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+              <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+              <span id="theme-toggle-label">Mode Gelap</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="topbar-create-btn"
+              data-goto="voucher-designer"
+            >
+              Buat Voucher
+            </button>
+          </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content" id="main-content">
+          <!-- VIEW 1: DASHBOARD -->
+          <section class="view is-active" id="view-dashboard" aria-labelledby="dash-heading">
+            <div class="hero-panel">
+              <div class="hero-copy">
+                <div class="hero-brand-row">
+                  <span class="hero-brand-wordmark">MY REP</span>
+                  <span class="meta-sep" aria-hidden="true">·</span>
+                  <span class="hero-tagline">Connect Smarter, Stay Connected.</span>
+                </div>
+                <h2 class="hero-title" id="dash-heading">
+                  Selamat datang di MY REP WiFi Voucher
+                </h2>
+                <p class="hero-desc">
+                  Buat QR Code koneksi WiFi berstandar internasional yang langsung terbaca kamera ponsel, lalu rancang kartu voucher siap cetak dan unduh PNG berkualitas tinggi tanpa server atau login.
+                </p>
+                <div class="hero-cta-row">
+                  <button type="button" class="btn btn-primary btn-lg" data-goto="voucher-designer">
+                    Buat Voucher
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-lg" data-goto="qr-generator">
+                    Buat QR WiFi
+                  </button>
+                </div>
+              </div>
+              <div class="hero-highlight">
+                <div class="hero-spec-list">
+                  <div class="hero-spec-item">
+                    <span class="spec-label">Pemrosesan QR</span>
+                    <span class="spec-value">100% Lokal di Browser</span>
+                  </div>
+                  <div class="hero-spec-item">
+                    <span class="spec-label">Standar Payload</span>
+                    <span class="spec-value mono">WIFI:T:WPA;S:...;;</span>
+                  </div>
+                  <div class="hero-spec-item">
+                    <span class="spec-label">Format Cetak</span>
+                    <span class="spec-value">Kartu Saku, A4 Grid, Thermal</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="stats-grid" aria-label="Statistik Desain Lokal">
+              <div class="stat-cell">
+                <span class="stat-label">Desain Tersimpan</span>
+                <strong class="stat-value tabular-nums" id="stat-total-designs">0</strong>
+                <span class="stat-meta">Penyimpanan lokal browser</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label">Template Favorit</span>
+                <strong class="stat-value" id="stat-top-template">Modern Blue</strong>
+                <span class="stat-meta" id="stat-top-template-meta">Siap digunakan</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label">Paket Terakhir</span>
+                <strong class="stat-value" id="stat-last-package">Unlimited</strong>
+                <span class="stat-meta tabular-nums" id="stat-last-price">Rp5.000</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label">Status QR Sesi Ini</span>
+                <strong class="stat-value" id="stat-qr-status">Contoh Aktif</strong>
+                <span class="stat-meta mono" id="stat-qr-ssid">MY_REP_WIFI</span>
+              </div>
+            </div>
+
+            <!-- Two-Column Dashboard Content -->
+            <div class="dashboard-split">
+              <div class="panel">
+                <div class="panel-header">
+                  <div>
+                    <h3 class="panel-title">Preview Contoh Voucher</h3>
+                    <p class="panel-subtitle">Contoh kartu voucher MY REP dengan QR Code aktif yang dapat dipindai.</p>
+                  </div>
+                  <button type="button" class="btn btn-secondary btn-sm" id="dash-load-sample-btn">
+                    Edit di Designer
+                  </button>
+                </div>
+                <div class="sample-preview-box">
+                  <div id="dashboard-sample-voucher" class="voucher-preview-wrapper"></div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-header">
+                  <div>
+                    <h3 class="panel-title">Panduan Singkat Penggunaan</h3>
+                    <p class="panel-subtitle">Tiga langkah cepat menghasilkan voucher WiFi profesional.</p>
+                  </div>
+                  <button type="button" class="btn btn-ghost btn-sm" data-goto="guide">
+                    Panduan Lengkap
+                  </button>
+                </div>
+                <ol class="quick-steps">
+                  <li class="quick-step">
+                    <span class="step-num tabular-nums">01</span>
+                    <div>
+                      <h4 class="step-title">Generate QR Code WiFi</h4>
+                      <p class="step-desc">Masukkan nama jaringan (SSID), password, dan tipe keamanan (WPA/WPA2, WPA3, atau Open Network). Sistem otomatis menyusun payload WiFi standar dengan escaping karakter khusus.</p>
+                    </div>
+                  </li>
+                  <li class="quick-step">
+                    <span class="step-num tabular-nums">02</span>
+                    <div>
+                      <h4 class="step-title">Rancang di Voucher Designer</h4>
+                      <p class="step-desc">Pilih salah satu dari 5 template MY REP, gunakan preset paket cepat (1 Jam, 1 Hari, Unlimited), atur warna, ukuran teks, dan posisi QR Code secara langsung.</p>
+                    </div>
+                  </li>
+                  <li class="quick-step">
+                    <span class="step-num tabular-nums">03</span>
+                    <div>
+                      <h4 class="step-title">Unduh PNG atau Cetak</h4>
+                      <p class="step-desc">Unduh kartu beresolusi tinggi, unduh QR saja, atau cetak dalam ukuran Kartu Saku (ID-1), Lembar A4 Grid siap potong, maupun Struk Thermal 58/80mm.</p>
+                    </div>
+                  </li>
+                </ol>
+                <div class="notice-box">
+                  <strong>Catatan Keamanan &amp; Produk:</strong> Hanya buat voucher untuk jaringan WiFi milik sendiri atau yang berizin. Aplikasi ini membuat desain kartu &amp; QR koneksi otomatis, bukan pengelola akun hotspot/MikroTik.
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- VIEW 2: WIFI QR CODE GENERATOR -->
+          <section class="view" id="view-qr-generator" aria-labelledby="qr-heading">
+            <div class="view-header">
+              <div>
+                <h2 class="view-title" id="qr-heading">Generator QR Code WiFi</h2>
+                <p class="view-subtitle">Hasilkan QR Code standar WiFi yang kompatibel dengan kamera Android dan iOS secara instan di browser.</p>
+              </div>
+            </div>
+
+            <div class="two-col-layout">
+              <form class="panel form-panel" id="qr-generator-form" novalidate>
+                <div class="panel-header">
+                  <h3 class="panel-title">Konfigurasi Jaringan WiFi</h3>
+                </div>
+
+                <div class="form-grid">
+                  <div class="field-group">
+                    <label for="qr-ssid" class="field-label">
+                      Nama WiFi (SSID) <span class="req" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="qr-ssid"
+                      class="input"
+                      maxlength="32"
+                      placeholder="Contoh: MY_REP_WIFI"
+                      autocomplete="off"
+                      required
+                    />
+                    <span class="field-hint">Maksimal 32 karakter sesuai standar SSID WiFi.</span>
+                    <span class="field-error" id="err-qr-ssid" role="alert"></span>
+                  </div>
+
+                  <div class="field-group">
+                    <label for="qr-security" class="field-label">Tipe Keamanan</label>
+                    <select id="qr-security" class="input select-input">
+                      <option value="WPA">WPA / WPA2 (Direkomendasikan)</option>
+                      <option value="WPA3">WPA3 (Format Kompatibel WPA/WPA3)</option>
+                      <option value="nopass">Open Network (Tanpa Password)</option>
+                    </select>
+                    <span class="field-hint" id="qr-security-hint">
+                      Menggunakan skema enkripsi standar WPA/WPA2 yang didukung luas kamera ponsel.
+                    </span>
+                  </div>
+
+                  <div class="field-group" id="qr-password-group">
+                    <label for="qr-password" class="field-label">
+                      Password WiFi <span class="req" id="qr-pass-req" aria-hidden="true">*</span>
+                    </label>
+                    <div class="input-with-action">
+                      <input
+                        type="password"
+                        id="qr-password"
+                        class="input"
+                        maxlength="63"
+                        placeholder="Minimal 8 karakter untuk WPA/WPA2/WPA3"
+                        autocomplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        class="input-action-btn"
+                        id="toggle-qr-password-btn"
+                        aria-label="Tampilkan atau sembunyikan password"
+                      >
+                        Tampilkan
+                      </button>
+                    </div>
+                    <span class="field-error" id="err-qr-password" role="alert"></span>
+                  </div>
+
+                  <div class="field-group">
+                    <label class="checkbox-row">
+                      <input type="checkbox" id="qr-hidden" />
+                      <span>Hidden Network (Jaringan WiFi tersembunyi / tidak menyiarkan SSID)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="notice-box">
+                  <strong>Peringatan Izin Jaringan:</strong> Gunakan fitur ini hanya untuk jaringan WiFi milik Anda sendiri atau jaringan yang telah memberikan izin resmi. Password WiFi tidak pernah dikirim ke server mana pun.
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary" id="generate-qr-btn">
+                    GENERATE QR CODE
+                  </button>
+                  <button type="button" class="btn btn-secondary" id="load-qr-example-btn">
+                    Isi Data Contoh
+                  </button>
+                </div>
+              </form>
+
+              <div class="panel qr-result-panel">
+                <div class="panel-header">
+                  <div>
+                    <h3 class="panel-title">Pratinjau QR Code WiFi</h3>
+                    <p class="panel-subtitle" id="qr-status-subtitle">Isi data jaringan lalu tekan Generate QR Code.</p>
+                  </div>
+                </div>
+
+                <div class="qr-stage">
+                  <div class="qr-frame" id="qr-output-frame">
+                    <canvas id="qr-standalone-canvas" width="280" height="280" aria-label="Pratinjau QR Code WiFi"></canvas>
+                  </div>
+                  <div class="qr-meta-summary" id="qr-meta-summary">
+                    <div class="qr-summary-row">
+                      <span>SSID</span>
+                      <strong class="mono" id="summary-ssid">MY_REP_WIFI</strong>
+                    </div>
+                    <div class="qr-summary-row">
+                      <span>Keamanan</span>
+                      <strong id="summary-security">WPA / WPA2</strong>
+                    </div>
+                    <div class="qr-summary-row">
+                      <span>Hidden SSID</span>
+                      <strong id="summary-hidden">Tidak</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="payload-box">
+                  <div class="payload-box-header">
+                    <span class="payload-label">Format String WiFi QR</span>
+                    <button type="button" class="text-btn" id="toggle-payload-mask-btn">
+                      Tampilkan Password di Payload
+                    </button>
+                  </div>
+                  <code class="payload-code mono" id="qr-payload-display">WIFI:T:WPA;S:MY_REP_WIFI;P:••••••••;;</code>
+                </div>
+
+                <div class="qr-actions-grid">
+                  <button type="button" class="btn btn-secondary" id="regenerate-qr-btn">
+                    Regenerasi QR Code
+                  </button>
+                  <button type="button" class="btn btn-secondary" id="download-qr-only-btn">
+                    Download QR Code PNG
+                  </button>
+                  <button type="button" class="btn btn-primary full-span" id="send-to-designer-btn">
+                    Gunakan di Voucher Designer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- VIEW 3: VOUCHER DESIGNER -->
+          <section class="view" id="view-voucher-designer" aria-labelledby="designer-heading">
+            <div class="view-header">
+              <div>
+                <h2 class="view-title" id="designer-heading">WiFi Voucher Designer</h2>
+                <p class="view-subtitle">Sesuaikan informasi paket, pilih template MY REP, kustomisasi tampilan secara langsung, lalu unduh PNG atau cetak.</p>
+              </div>
+              <div class="view-header-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="reset-designer-example-btn">
+                  Muat Contoh Default
+                </button>
+              </div>
+            </div>
+
+            <div class="designer-workspace">
+              <!-- Left Column: Editor Controls -->
+              <div class="designer-controls">
+                <!-- Editor Tabs -->
+                <div class="segmented-tabs" role="tablist" aria-label="Bagian Editor Voucher">
+                  <button type="button" class="seg-tab is-active" role="tab" aria-selected="true" data-designer-tab="info">
+                    Data &amp; Paket
+                  </button>
+                  <button type="button" class="seg-tab" role="tab" aria-selected="false" data-designer-tab="style">
+                    Template &amp; Warna
+                  </button>
+                  <button type="button" class="seg-tab" role="tab" aria-selected="false" data-designer-tab="layout">
+                    Tata Letak &amp; Opsi
+                  </button>
+                </div>
+
+                <!-- Tab Panel 1: Info & WiFi -->
+                <div class="panel designer-tab-panel is-active" id="tab-panel-info">
+                  <div class="preset-section">
+                    <span class="field-label">Preset Paket Cepat</span>
+                    <div class="preset-grid" id="package-preset-grid">
+                      <button type="button" class="preset-btn" data-pkg="Hemat 1 Jam" data-dur="1 Jam" data-price="Rp2.000">1 Jam · Rp2.000</button>
+                      <button type="button" class="preset-btn" data-pkg="Reguler 3 Jam" data-dur="3 Jam" data-price="Rp3.000">3 Jam · Rp3.000</button>
+                      <button type="button" class="preset-btn" data-pkg="Harian 24 Jam" data-dur="1 Hari" data-price="Rp5.000">1 Hari · Rp5.000</button>
+                      <button type="button" class="preset-btn" data-pkg="Mingguan" data-dur="7 Hari" data-price="Rp20.000">1 Minggu · Rp20.000</button>
+                      <button type="button" class="preset-btn" data-pkg="Bulanan" data-dur="30 Hari" data-price="Rp50.000">1 Bulan · Rp50.000</button>
+                      <button type="button" class="preset-btn is-selected" data-pkg="Unlimited" data-dur="1 Hari" data-price="Rp5.000">Unlimited · Rp5.000</button>
+                    </div>
+                  </div>
+
+                  <div class="form-grid two-col-fields">
+                    <div class="field-group full-span">
+                      <label for="des-brand" class="field-label">Brand Utama (Wajib &amp; Permanen)</label>
+                      <div class="locked-brand-field">
+                        <input type="text" id="des-brand" class="input" value="MY REP" readonly aria-readonly="true" />
+                        <span class="locked-label">Terkunci</span>
+                      </div>
+                    </div>
+
+                    <div class="field-group">
+                      <label for="des-voucher-name" class="field-label">Nama Voucher</label>
+                      <input type="text" id="des-voucher-name" class="input" maxlength="40" placeholder="MY REP WIFI" />
+                    </div>
+
+                    <div class="field-group">
+                      <label for="des-code" class="field-label">Kode Voucher (Opsional)</label>
+                      <input type="text" id="des-code" class="input mono" maxlength="20" placeholder="MRP001" />
+                    </div>
+
+                    <div class="field-group">
+                      <label for="des-ssid" class="field-label">Nama WiFi (SSID) <span class="req">*</span></label>
+                      <input type="text" id="des-ssid" class="input" maxlength="32" placeholder="MY_REP_WIFI" />
+                    </div>
+
+                    <div class="field-group">
+                      <label for="des-security" class="field-label">Keamanan WiFi</label>
+                      <select id="des-security" class="input select-input">
+                        <option value="WPA">WPA / WPA2</option>
+                        <option value="WPA3">WPA3 (Kompatibel)</option>
+                        <option value="nopass">Open Network</option>
+                      </select>
+                    </div>
+
+                    <div class="field-group full-span" id="des-password-group">
+                      <label for="des-password" class="field-label">Password WiFi</label>
+                      <div class="input-with-action">
+                        <input type="password" id="des-password" class="input" maxlength="63" placeholder="Masukkan password WiFi" autocomplete="new-password" />
+                        <button type="button" class="input-action-btn" id="toggle-des-password-btn">
+                          Tampilkan
+                        </button>
+                      </div>
+                      <span class="field-error" id="err-des-wifi" role="alert"></span>
+                    </div>
+
+                    <div class="field-group full-span">
+                      <label class="checkbox-row">
+                        <input type="checkbox" id="des-hidden" />
+                        <span>Hidden Network (SSID Tersembunyi)</span>
+                      </label>
+                    </div>
+
+                    <div class="field-group">
+                      <label for="des-package" class="field-label">Paket</label>
+                      <input type="text" id="des-package" class="input" maxlength="30" placeholder="Unlimited" />
+                    </div>
+
+                    <div class="field-group">
+                      <label for="des-duration" class="field-label">Durasi Paket</label>
+                      <input type="text" id="des-duration" class="input" maxlength="25" placeholder="1 Hari" />
+                    </div>
+
+                    <div class="field-group">
+                      <label for="des-price" class="field-label">Harga Voucher</label>
+                      <input type="text" id="des-price" class="input mono" maxlength="25" placeholder="Rp5.000" />
+                    </div>
+
+                    <div class="field-group full-span">
+                      <label for="des-description" class="field-label">Deskripsi / Petunjuk Penggunaan</label>
+                      <textarea id="des-description" class="input textarea-input" rows="2" maxlength="140" placeholder="Scan QR Code dengan kamera HP untuk terhubung ke WiFi secara otomatis."></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tab Panel 2: Template & Colors -->
+                <div class="panel designer-tab-panel" id="tab-panel-style">
+                  <div class="field-group">
+                    <span class="field-label">Pilih Template Voucher (5 Desain)</span>
+                    <div class="template-grid" id="template-selector-grid">
+                      <button type="button" class="template-option is-active" data-template="modern-blue">
+                        <span class="tpl-swatch tpl-swatch-modern"></span>
+                        <span class="tpl-info">
+                          <strong>Modern Blue</strong>
+                          <span>Navy &amp; Electric Blue</span>
+                        </span>
+                      </button>
+                      <button type="button" class="template-option" data-template="dark-premium">
+                        <span class="tpl-swatch tpl-swatch-dark"></span>
+                        <span class="tpl-info">
+                          <strong>Dark Premium</strong>
+                          <span>Arang Gelap &amp; Cyan</span>
+                        </span>
+                      </button>
+                      <button type="button" class="template-option" data-template="cyber-neon">
+                        <span class="tpl-swatch tpl-swatch-cyber"></span>
+                        <span class="tpl-info">
+                          <strong>Cyber Neon</strong>
+                          <span>Tekno Sudut Presisi</span>
+                        </span>
+                      </button>
+                      <button type="button" class="template-option" data-template="minimalist-white">
+                        <span class="tpl-swatch tpl-swatch-minimal"></span>
+                        <span class="tpl-info">
+                          <strong>Minimalist White</strong>
+                          <span>Putih Bersih Hemat Tinta</span>
+                        </span>
+                      </button>
+                      <button type="button" class="template-option" data-template="professional-network">
+                        <span class="tpl-swatch tpl-swatch-pro"></span>
+                        <span class="tpl-info">
+                          <strong>Professional Network</strong>
+                          <span>Tata Letak Dua Zona ISP</span>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="color-controls-header">
+                    <span class="field-label">Kustomisasi Warna Kartu</span>
+                    <button type="button" class="text-btn" id="reset-colors-btn">Reset ke Warna Template</button>
+                  </div>
+
+                  <div class="color-picker-grid">
+                    <label class="color-picker-card">
+                      <span>Latar Belakang</span>
+                      <div class="color-input-row">
+                        <input type="color" id="des-color-bg" value="#0A192F" />
+                        <span class="mono color-hex" id="hex-bg">#0A192F</span>
+                      </div>
+                    </label>
+
+                    <label class="color-picker-card">
+                      <span>Warna Teks</span>
+                      <div class="color-input-row">
+                        <input type="color" id="des-color-text" value="#FFFFFF" />
+                        <span class="mono color-hex" id="hex-text">#FFFFFF</span>
+                      </div>
+                    </label>
+
+                    <label class="color-picker-card">
+                      <span>Warna Aksen</span>
+                      <div class="color-input-row">
+                        <input type="color" id="des-color-accent" value="#22D3EE" />
+                        <span class="mono color-hex" id="hex-accent">#22D3EE</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Tab Panel 3: Layout & Visibility -->
+                <div class="panel designer-tab-panel" id="tab-panel-layout">
+                  <div class="field-group">
+                    <span class="field-label">Ukuran Teks Voucher</span>
+                    <div class="segmented-control" id="text-size-control">
+                      <button type="button" class="seg-btn" data-text-size="sm">Kecil</button>
+                      <button type="button" class="seg-btn is-active" data-text-size="md">Sedang</button>
+                      <button type="button" class="seg-btn" data-text-size="lg">Besar</button>
+                    </div>
+                  </div>
+
+                  <div class="field-group">
+                    <span class="field-label">Posisi QR Code</span>
+                    <div class="segmented-control" id="qr-pos-control">
+                      <button type="button" class="seg-btn" data-qr-pos="left">Kiri</button>
+                      <button type="button" class="seg-btn is-active" data-qr-pos="right">Kanan</button>
+                      <button type="button" class="seg-btn" data-qr-pos="top">Atas</button>
+                      <button type="button" class="seg-btn" data-qr-pos="center">Tengah</button>
+                    </div>
+                  </div>
+
+                  <div class="field-group">
+                    <span class="field-label">Visibilitas Informasi pada Kartu</span>
+                    <div class="toggle-list">
+                      <label class="switch-row">
+                        <span>Tampilkan Informasi Harga</span>
+                        <input type="checkbox" id="toggle-show-price" checked />
+                      </label>
+                      <label class="switch-row">
+                        <span>Tampilkan Password WiFi di Kartu (Jika mati: ••••••)</span>
+                        <input type="checkbox" id="toggle-show-password" checked />
+                      </label>
+                      <label class="switch-row">
+                        <span>Tampilkan Kode Voucher</span>
+                        <input type="checkbox" id="toggle-show-code" checked />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Column: Live Preview & Export -->
+              <div class="designer-preview-col">
+                <div class="panel preview-panel">
+                  <div class="panel-header">
+                    <div>
+                      <h3 class="panel-title">Live Preview Kartu Voucher</h3>
+                      <p class="panel-subtitle">QR Code tetap terkunci dan valid saat Anda mengganti template atau warna.</p>
+                    </div>
+                    <span class="preview-template-label" id="preview-template-name">Modern Blue</span>
+                  </div>
+
+                  <div class="voucher-stage" id="voucher-stage">
+                    <div id="voucher-live-preview" class="voucher-preview-wrapper"></div>
+                  </div>
+
+                  <div class="export-actions-bar">
+                    <button type="button" class="btn btn-primary" id="download-voucher-png-btn">
+                      Download PNG
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="open-print-modal-btn">
+                      Print Voucher
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="designer-download-qr-btn">
+                      Download QR Saja
+                    </button>
+                    <button type="button" class="btn btn-outline-accent" id="save-history-btn">
+                      Simpan ke Riwayat
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- VIEW 4: RIWAYAT DESAIN -->
+          <section class="view" id="view-history" aria-labelledby="history-heading">
+            <div class="view-header">
+              <div>
+                <h2 class="view-title" id="history-heading">Riwayat Desain Lokal</h2>
+                <p class="view-subtitle">Daftar desain voucher yang disimpan di perangkat Anda.</p>
+              </div>
+              <div class="view-header-actions">
+                <button type="button" class="btn btn-danger btn-sm" id="clear-all-history-btn">
+                  Hapus Semua Riwayat
+                </button>
+              </div>
+            </div>
+
+            <div class="notice-box">
+              <strong>Privasi Terjaga:</strong> Password WiFi tidak pernah disimpan ke <code>localStorage</code>. Saat membuka kembali desain dari riwayat, masukkan ulang password WiFi Anda pada editor untuk memperbarui QR jika jaringan memakai password.
+            </div>
+
+            <div class="panel history-toolbar">
+              <div class="history-filters">
+                <input
+                  type="search"
+                  id="history-search-input"
+                  class="input"
+                  placeholder="Cari nama desain, SSID, atau paket..."
+                  aria-label="Cari riwayat desain"
+                />
+                <select id="history-template-filter" class="input select-input" aria-label="Filter berdasarkan template">
+                  <option value="all">Semua Template</option>
+                  <option value="modern-blue">Modern Blue</option>
+                  <option value="dark-premium">Dark Premium</option>
+                  <option value="cyber-neon">Cyber Neon</option>
+                  <option value="minimalist-white">Minimalist White</option>
+                  <option value="professional-network">Professional Network</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="history-list-container" class="history-grid"></div>
+
+            <div id="history-empty-state" class="panel empty-state" hidden>
+              <div class="empty-icon" aria-hidden="true">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                  <line x1="2" y1="10" x2="22" y2="10" />
+                </svg>
+              </div>
+              <h3>Belum Ada Desain Tersimpan</h3>
+              <p>Desain voucher yang Anda simpan dari Voucher Designer akan muncul di sini tanpa menyimpan password WiFi.</p>
+              <button type="button" class="btn btn-primary" data-goto="voucher-designer">
+                Buat Voucher Pertama
+              </button>
+            </div>
+          </section>
+
+          <!-- VIEW 5: PANDUAN PENGGUNAAN -->
+          <section class="view" id="view-guide" aria-labelledby="guide-heading">
+            <div class="view-header">
+              <div>
+                <h2 class="view-title" id="guide-heading">Panduan Penggunaan &amp; Ketentuan</h2>
+                <p class="view-subtitle">Informasi lengkap pengoperasian, standar QR WiFi, tips pencetakan, serta batasan produk.</p>
+              </div>
+            </div>
+
+            <div class="guide-grid">
+              <article class="panel guide-card">
+                <h3 class="panel-title">01. Cara Membuat QR Code WiFi</h3>
+                <p>Buka menu <strong>Buat QR WiFi</strong>, isi nama WiFi (SSID) tepat sesuai huruf besar/kecil pada router Anda, pilih tipe keamanan (WPA/WPA2, WPA3, atau Open Network), lalu isi password WiFi.</p>
+                <p>Sistem secara otomatis melakukan <em>escaping</em> karakter khusus seperti titik koma (<code>;</code>), koma (<code>,</code>), titik dua (<code>:</code>), tanda kutip (<code>"</code>), dan garis miring terbalik (<code>\</code>) agar QR selalu terbaca oleh kamera Android maupun iPhone.</p>
+              </article>
+
+              <article class="panel guide-card">
+                <h3 class="panel-title">02. Merancang &amp; Menyesuaikan Voucher</h3>
+                <p>Klik <strong>Gunakan di Voucher Designer</strong> untuk memindahkan data jaringan langsung ke editor kartu. Anda dapat memilih preset paket cepat, mengganti salah satu dari 5 template bermerek <strong>MY REP</strong>, mengatur warna latar/teks/aksen, posisi QR, hingga menyembunyikan password tercetak.</p>
+              </article>
+
+              <article class="panel guide-card">
+                <h3 class="panel-title">03. Tips Download PNG &amp; Cetak</h3>
+                <p>Gunakan <strong>Download PNG</strong> untuk membagikan voucher secara digital atau dicetak lewat aplikasi desain lain. Untuk cetak langsung dari browser melalui <strong>Print Voucher</strong>, tersedia preset:</p>
+                <ul class="clean-list">
+                  <li><strong>Kartu Saku (ID-1 · 85.6 × 54 mm):</strong> Ukuran standar kartu ATM/ID untuk dicetak satuan.</li>
+                  <li><strong>A4 Grid Siap Potong:</strong> Menyusun 4 hingga 10 kartu dalam satu lembar A4 lengkap dengan garis panduan potong.</li>
+                  <li><strong>Struk Thermal 58 mm &amp; 80 mm:</strong> Tata letak vertikal kontras tinggi untuk printer kasir/Bluetooth POS.</li>
+                </ul>
+              </article>
+
+              <article class="panel guide-card">
+                <h3 class="panel-title">04. Batasan Produk &amp; Keamanan</h3>
+                <p><strong>Penting untuk dipahami:</strong> MY REP WiFi Voucher adalah platform pembuat QR koneksi WiFi dan desain kartu voucher.</p>
+                <ul class="clean-list">
+                  <li>QR WiFi berfungsi mempermudah perangkat terhubung ke SSID dengan kredensial yang Anda masukkan.</li>
+                  <li>Website ini <strong>tidak</strong> membuat akun hotspot secara otomatis, <strong>tidak</strong> membatasi durasi/kuota internet, dan <strong>tidak</strong> terhubung ke MikroTik atau server billing.</li>
+                  <li>Informasi paket, durasi, harga, dan kode voucher merupakan keterangan penjualan manual pada kartu.</li>
+                  <li>Seluruh proses berjalan lokal di browser Anda dan password tidak pernah disimpan ke <code>localStorage</code>.</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <!-- VIEW 6: TENTANG MY REP -->
+          <section class="view" id="view-about" aria-labelledby="about-heading">
+            <div class="view-header">
+              <div>
+                <h2 class="view-title" id="about-heading">Tentang MY REP WiFi Voucher</h2>
+                <p class="view-subtitle">Identitas brand teknologi jaringan untuk pelaku usaha kecil dan proyek kewirausahaan (PKDK).</p>
+              </div>
+            </div>
+
+            <div class="about-layout">
+              <div class="panel about-brand-panel">
+                <div class="about-logo-lockup">
+                  <span class="brand-mark-lg" aria-hidden="true">
+                    <svg width="52" height="52" viewBox="0 0 36 36" fill="none">
+                      <rect width="36" height="36" rx="9" fill="#0A192F" />
+                      <rect x="0.75" y="0.75" width="34.5" height="34.5" rx="8.25" stroke="#22D3EE" stroke-opacity="0.45" stroke-width="1.5" />
+                      <path d="M9.5 16.5C14.2 11.8 21.8 11.8 26.5 16.5" stroke="#22D3EE" stroke-width="2.4" stroke-linecap="round" />
+                      <path d="M13 20.5C15.8 17.7 20.2 17.7 23 20.5" stroke="#3B82F6" stroke-width="2.4" stroke-linecap="round" />
+                      <circle cx="18" cy="24.75" r="2.25" fill="#FFFFFF" />
+                    </svg>
+                  </span>
+                  <div>
+                    <h3 class="about-wordmark">MY REP</h3>
+                    <p class="about-tagline">Connect Smarter, Stay Connected.</p>
+                  </div>
+                </div>
+                <p class="about-copy">
+                  <strong>MY REP WiFi Voucher</strong> dirancang dengan fokus pada keandalan fungsional, tampilan modern bertema jaringan komputer, dan kemudahan operasional untuk UMKM, kafe, pengelola kos, serta proyek Produk Kreatif dan Kewirausahaan (PKDK).
+                </p>
+                <p class="about-copy">
+                  Dibangun menggunakan teknologi web standar murni (HTML5, CSS3, dan JavaScript Vanilla) agar ringan, dapat dijalankan langsung secara lokal, dan mudah di-deploy melalui GitHub Pages atau hosting statis mana pun tanpa biaya server.
+                </p>
+              </div>
+
+              <div class="panel">
+                <h3 class="panel-title">Prinsip Arsitektur</h3>
+                <dl class="spec-dl">
+                  <div class="spec-dl-row">
+                    <dt>Nama Aplikasi</dt>
+                    <dd>MY REP WiFi Voucher</dd>
+                  </div>
+                  <div class="spec-dl-row">
+                    <dt>Tagline</dt>
+                    <dd>Connect Smarter, Stay Connected.</dd>
+                  </div>
+                  <div class="spec-dl-row">
+                    <dt>Teknologi Inti</dt>
+                    <dd>HTML5, CSS3, JavaScript Vanilla</dd>
+                  </div>
+                  <div class="spec-dl-row">
+                    <dt>Keamanan Data</dt>
+                    <dd>Client-Side Only · Tanpa Database Server · Password Tidak Disimpan</dd>
+                  </div>
+                  <div class="spec-dl-row">
+                    <dt>Kompatibilitas Deploy</dt>
+                    <dd>Lokal, GitHub Pages, Netlify, Vercel, Hosting Statis</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Print Configuration Modal -->
+    <div class="modal-backdrop" id="print-modal" hidden aria-modal="true" role="dialog" aria-labelledby="print-modal-title">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 class="modal-title" id="print-modal-title">Pengaturan Cetak Voucher</h3>
+          <button type="button" class="icon-btn" id="close-print-modal-btn" aria-label="Tutup pengaturan cetak">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="field-group">
+            <span class="field-label">Pilih Ukuran &amp; Format Kertas</span>
+            <div class="print-format-grid" id="print-format-grid">
+              <button type="button" class="print-format-btn is-active" data-print-format="id1">
+                <strong>Kartu Saku (ID-1)</strong>
+                <span>85.6 × 54 mm · 1 kartu presisi ukuran ATM</span>
+              </button>
+              <button type="button" class="print-format-btn" data-print-format="a4">
+                <strong>Lembar A4 Grid Siap Potong</strong>
+                <span>Banyak kartu per lembar dengan garis potong</span>
+              </button>
+              <button type="button" class="print-format-btn" data-print-format="thermal58">
+                <strong>Struk Thermal 58 mm</strong>
+                <span>Format vertikal hemat kertas POS 58 mm</span>
+              </button>
+              <button type="button" class="print-format-btn" data-print-format="thermal80">
+                <strong>Struk Thermal 80 mm</strong>
+                <span>Format kasir lebar 80 mm kontras tinggi</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="field-group" id="print-copies-group" hidden>
+            <label for="print-a4-copies" class="field-label">Jumlah Kartu pada Lembar A4</label>
+            <select id="print-a4-copies" class="input select-input">
+              <option value="4">4 Kartu (2 × 2 Besar)</option>
+              <option value="6">6 Kartu (2 × 3 Standar)</option>
+              <option value="8" selected>8 Kartu (2 × 4 Ukuran Saku)</option>
+              <option value="10">10 Kartu (2 × 5 Kompak)</option>
+            </select>
+          </div>
+
+          <div class="notice-box">
+            <strong>Tips Cetak Browser:</strong> Aktifkan opsi <em>Background graphics</em> pada dialog cetak browser Anda agar warna template kartu tercetak sempurna.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancel-print-modal-btn">Batal</button>
+          <button type="button" class="btn btn-primary" id="execute-print-btn">Cetak Sekarang</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div class="modal-backdrop" id="confirm-modal" hidden aria-modal="true" role="dialog" aria-labelledby="confirm-modal-title">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-header">
+          <h3 class="modal-title" id="confirm-modal-title">Konfirmasi</h3>
+        </div>
+        <div class="modal-body">
+          <p id="confirm-modal-message">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="confirm-cancel-btn">Batal</button>
+          <button type="button" class="btn btn-danger" id="confirm-accept-btn">Ya, Hapus</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dedicated Print Output Root (Only visible in @media print) -->
+    <div id="print-area" class="print-area" aria-hidden="true"></div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
+  </body>
+</html>
