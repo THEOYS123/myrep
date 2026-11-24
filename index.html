@@ -106,6 +106,27 @@
             <span class="nav-count tabular-nums" id="nav-history-count">0</span>
           </button>
 
+          <div class="sidebar-section-label">Studio Khusus</div>
+
+          <button type="button" class="nav-item nav-item-studio" data-view="custom-qr">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="3" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            <span>Custom QR Studio</span>
+          </button>
+
+          <div class="sidebar-section-label">Pengelolaan</div>
+
+          <button type="button" class="nav-item" data-view="admin">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            <span>Panel Admin</span>
+          </button>
+
           <button type="button" class="nav-item" data-view="guide">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
@@ -707,6 +728,11 @@
                     <div id="voucher-live-preview" class="voucher-preview-wrapper"></div>
                   </div>
 
+                  <div class="custom-qr-banner" id="designer-custom-qr-banner" hidden>
+                    <span>Gaya Custom QR Studio (logo/warna/modul) sedang diterapkan pada kartu ini.</span>
+                    <button type="button" class="text-btn" id="designer-clear-custom-qr-btn">Kembalikan ke QR Standar</button>
+                  </div>
+
                   <div class="export-actions-bar">
                     <button type="button" class="btn btn-primary" id="download-voucher-png-btn">
                       Download PNG
@@ -720,6 +746,516 @@
                     <button type="button" class="btn btn-outline-accent" id="save-history-btn">
                       Simpan ke Riwayat
                     </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- VIEW 3B: STUDIO KHUSUS — CUSTOM QR STUDIO -->
+          <section class="view" id="view-custom-qr" aria-labelledby="custom-qr-heading">
+            <div class="view-header">
+              <div>
+                <h2 class="view-title" id="custom-qr-heading">Custom QR Studio (Unggah Gambar)</h2>
+                <p class="view-subtitle">Menu khusus untuk merancang QR Code bermerek dengan logo di tengah, bingkai gambar poster, gaya modul unik, dan koreksi error Level H (30%) agar tetap mudah dipindai.</p>
+              </div>
+              <div class="view-header-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="cqr-reset-btn">
+                  Reset Studio
+                </button>
+              </div>
+            </div>
+
+            <div class="designer-workspace">
+              <!-- Left Column: Custom QR Controls -->
+              <div class="designer-controls">
+                <div class="panel">
+                  <div class="panel-header">
+                    <div>
+                      <h3 class="panel-title">1. Sumber Data QR</h3>
+                      <p class="panel-subtitle">Pilih data jaringan WiFi atau tautan/teks kustom.</p>
+                    </div>
+                    <button type="button" class="text-btn" id="cqr-sync-wifi-btn">Ambil dari QR WiFi</button>
+                  </div>
+
+                  <div class="segmented-control" id="cqr-source-control">
+                    <button type="button" class="seg-btn is-active" data-cqr-source="wifi">Jaringan WiFi</button>
+                    <button type="button" class="seg-btn" data-cqr-source="custom">Teks / URL Bebas</button>
+                  </div>
+
+                  <div class="form-grid two-col-fields" id="cqr-wifi-fields" style="margin-top: 14px;">
+                    <div class="field-group">
+                      <label for="cqr-ssid" class="field-label">Nama WiFi (SSID)</label>
+                      <input type="text" id="cqr-ssid" class="input" maxlength="32" placeholder="MY_REP_WIFI" />
+                    </div>
+                    <div class="field-group">
+                      <label for="cqr-security" class="field-label">Keamanan</label>
+                      <select id="cqr-security" class="input select-input">
+                        <option value="WPA">WPA / WPA2</option>
+                        <option value="WPA3">WPA3 (Kompatibel)</option>
+                        <option value="nopass">Open Network</option>
+                      </select>
+                    </div>
+                    <div class="field-group full-span">
+                      <label for="cqr-password" class="field-label">Password WiFi</label>
+                      <div class="input-with-action">
+                        <input type="password" id="cqr-password" class="input" maxlength="63" placeholder="Password WiFi" autocomplete="new-password" />
+                        <button type="button" class="input-action-btn" id="toggle-cqr-password-btn">Tampilkan</button>
+                      </div>
+                    </div>
+                    <div class="field-group full-span">
+                      <label class="checkbox-row">
+                        <input type="checkbox" id="cqr-hidden" />
+                        <span>Hidden Network (SSID Tersembunyi)</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="form-grid" id="cqr-custom-fields" hidden style="margin-top: 14px;">
+                    <div class="field-group">
+                      <label for="cqr-custom-text" class="field-label">Teks atau URL Tujuan</label>
+                      <textarea id="cqr-custom-text" class="input textarea-input" rows="2" maxlength="300" placeholder="https://myrep.example.com"></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="panel" style="margin-top: 16px;">
+                  <div class="panel-header">
+                    <div>
+                      <h3 class="panel-title">2. Unggah Gambar Logo Tengah QR</h3>
+                      <p class="panel-subtitle">Otomatis menggunakan Error Correction Level H (30%).</p>
+                    </div>
+                  </div>
+
+                  <div class="upload-dropzone" id="cqr-logo-dropzone">
+                    <input type="file" id="cqr-logo-file" class="sr-only" accept="image/png,image/jpeg,image/webp,image/svg+xml" />
+                    <div class="upload-zone-body">
+                      <strong id="cqr-logo-status">Pilih atau tarik file gambar logo ke sini</strong>
+                      <span>PNG, JPG, WEBP, atau SVG · Diproses lokal di browser</span>
+                    </div>
+                    <div class="upload-zone-actions">
+                      <label for="cqr-logo-file" class="btn btn-secondary btn-sm">Pilih Gambar</label>
+                      <button type="button" class="btn btn-ghost btn-sm" id="cqr-remove-logo-btn" hidden>Hapus</button>
+                    </div>
+                  </div>
+
+                  <div class="form-grid two-col-fields" style="margin-top: 14px;">
+                    <div class="field-group full-span">
+                      <span class="field-label">Bentuk Potongan Logo</span>
+                      <div class="segmented-control" id="cqr-logo-shape-control">
+                        <button type="button" class="seg-btn is-active" data-logo-shape="rounded">Rounded</button>
+                        <button type="button" class="seg-btn" data-logo-shape="circle">Lingkaran</button>
+                        <button type="button" class="seg-btn" data-logo-shape="square">Persegi</button>
+                      </div>
+                    </div>
+                    <div class="field-group">
+                      <label for="cqr-logo-size" class="field-label">Ukuran Logo (<span class="tabular-nums" id="cqr-logo-size-val">22</span>%)</label>
+                      <input type="range" id="cqr-logo-size" min="14" max="26" value="22" class="range-input" />
+                    </div>
+                    <div class="field-group">
+                      <label for="cqr-logo-pad" class="field-label">Padding Putih (<span class="tabular-nums" id="cqr-logo-pad-val">6</span>px)</label>
+                      <input type="range" id="cqr-logo-pad" min="2" max="14" value="6" class="range-input" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="panel" style="margin-top: 16px;">
+                  <div class="panel-header">
+                    <div>
+                      <h3 class="panel-title">3. Opsi Bingkai Gambar &amp; Gaya Modul</h3>
+                      <p class="panel-subtitle">Tambahkan gambar bingkai kartu luar serta atur bentuk &amp; warna QR.</p>
+                    </div>
+                  </div>
+
+                  <div class="form-grid">
+                    <label class="switch-row">
+                      <span>Aktifkan Mode Bingkai Kartu QR</span>
+                      <input type="checkbox" id="cqr-frame-enabled" />
+                    </label>
+
+                    <div id="cqr-frame-options" hidden class="form-grid">
+                      <div class="upload-dropzone">
+                        <input type="file" id="cqr-frame-file" class="sr-only" accept="image/png,image/jpeg,image/webp,image/svg+xml" />
+                        <div class="upload-zone-body">
+                          <strong id="cqr-frame-status">Unggah gambar latar bingkai (opsional)</strong>
+                          <span>Gambar berada di luar quiet zone putih agar QR tetap akurat</span>
+                        </div>
+                        <div class="upload-zone-actions">
+                          <label for="cqr-frame-file" class="btn btn-secondary btn-sm">Pilih Bingkai</label>
+                          <button type="button" class="btn btn-ghost btn-sm" id="cqr-remove-frame-btn" hidden>Hapus</button>
+                        </div>
+                      </div>
+
+                      <div class="two-col-fields">
+                        <div class="field-group">
+                          <label for="cqr-frame-title" class="field-label">Judul Bingkai</label>
+                          <input type="text" id="cqr-frame-title" class="input" maxlength="32" value="SCAN WIFI MY REP" />
+                        </div>
+                        <div class="field-group">
+                          <label for="cqr-frame-subtitle" class="field-label">Catatan Bingkai</label>
+                          <input type="text" id="cqr-frame-subtitle" class="input" maxlength="44" value="Connect Smarter, Stay Connected." />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="field-group">
+                      <span class="field-label">Bentuk Titik / Modul QR</span>
+                      <div class="segmented-control" id="cqr-module-style-control">
+                        <button type="button" class="seg-btn is-active" data-module-style="square">Persegi</button>
+                        <button type="button" class="seg-btn" data-module-style="rounded">Membulat</button>
+                        <button type="button" class="seg-btn" data-module-style="dots">Titik Halus</button>
+                      </div>
+                    </div>
+
+                    <div class="color-picker-grid">
+                      <label class="color-picker-card">
+                        <span>Warna Modul QR</span>
+                        <div class="color-input-row">
+                          <input type="color" id="cqr-fg-color" value="#0A192F" />
+                          <span class="mono color-hex" id="cqr-fg-hex">#0A192F</span>
+                        </div>
+                      </label>
+                      <label class="color-picker-card">
+                        <span>Latar QR</span>
+                        <div class="color-input-row">
+                          <input type="color" id="cqr-bg-color" value="#FFFFFF" />
+                          <span class="mono color-hex" id="cqr-bg-hex">#FFFFFF</span>
+                        </div>
+                      </label>
+                      <label class="color-picker-card">
+                        <span>Aksen Bingkai</span>
+                        <div class="color-input-row">
+                          <input type="color" id="cqr-frame-color" value="#2563EB" />
+                          <span class="mono color-hex" id="cqr-frame-hex">#2563EB</span>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div class="notice-box contrast-alert" id="cqr-contrast-warning" hidden>
+                      <strong>Peringatan Kontras Rendah:</strong> Warna modul dan latar QR terlalu mirip. Gunakan modul gelap di atas latar terang agar mudah dipindai kamera HP.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Column: Custom QR Live Preview -->
+              <div class="designer-preview-col">
+                <div class="panel preview-panel">
+                  <div class="panel-header">
+                    <div>
+                      <h3 class="panel-title">Live Preview Custom QR</h3>
+                      <p class="panel-subtitle">Koreksi Error Level H · Siap unduh resolusi tinggi atau dipakai di voucher.</p>
+                    </div>
+                  </div>
+
+                  <div class="custom-qr-stage">
+                    <canvas id="cqr-preview-canvas" width="520" height="520" aria-label="Pratinjau Custom QR"></canvas>
+                  </div>
+
+                  <div class="export-actions-bar" style="margin-top: 16px;">
+                    <button type="button" class="btn btn-primary" id="cqr-download-png-btn">
+                      Download Custom QR PNG
+                    </button>
+                    <button type="button" class="btn btn-outline-accent" id="cqr-apply-designer-btn">
+                      Pakai di Voucher Designer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- VIEW 3C: PANEL ADMIN -->
+          <section class="view" id="view-admin" aria-labelledby="admin-heading">
+            <div class="view-header">
+              <div>
+                <h2 class="view-title" id="admin-heading">Panel Admin MY REP</h2>
+                <p class="view-subtitle">Kelola katalog produk, harga paket, pengaturan tampilan default, keamanan PIN opsional lokal, serta export/import JSON.</p>
+              </div>
+              <div class="view-header-actions admin-header-btns" id="admin-header-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="admin-lock-btn" hidden>
+                  Kunci Panel
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" id="admin-export-json-btn">
+                  Export JSON
+                </button>
+                <label for="admin-import-json-input" class="btn btn-secondary btn-sm">
+                  Import JSON
+                </label>
+                <input type="file" id="admin-import-json-input" class="sr-only" accept="application/json,.json" />
+              </div>
+            </div>
+
+            <!-- Optional PIN Lock Gate -->
+            <div class="panel admin-pin-gate" id="admin-pin-gate" hidden>
+              <div class="pin-gate-inner">
+                <h3 class="panel-title">Panel Admin Terkunci (PIN Lokal)</h3>
+                <p class="panel-subtitle">Masukkan PIN 4–6 digit yang Anda atur sebelumnya untuk mengelola produk, harga, dan tampilan.</p>
+                <form id="admin-unlock-form" class="pin-unlock-form">
+                  <input
+                    type="password"
+                    inputmode="numeric"
+                    id="admin-unlock-pin-input"
+                    class="input mono"
+                    maxlength="6"
+                    placeholder="Masukkan PIN Admin"
+                    autocomplete="off"
+                    required
+                  />
+                  <button type="submit" class="btn btn-primary">Buka Panel</button>
+                </form>
+                <span class="field-error" id="err-admin-unlock" role="alert"></span>
+              </div>
+            </div>
+
+            <!-- Admin Workspace -->
+            <div id="admin-workspace">
+              <div class="segmented-tabs" role="tablist" aria-label="Menu Panel Admin">
+                <button type="button" class="seg-tab is-active" role="tab" aria-selected="true" data-admin-tab="products">
+                  Produk &amp; Harga
+                </button>
+                <button type="button" class="seg-tab" role="tab" aria-selected="false" data-admin-tab="display">
+                  Tampilan &amp; Branding
+                </button>
+                <button type="button" class="seg-tab" role="tab" aria-selected="false" data-admin-tab="security">
+                  Cetak, PIN &amp; Backup
+                </button>
+              </div>
+
+              <!-- Admin Tab 1: Produk & Harga -->
+              <div class="admin-tab-panel is-active" id="admin-panel-products">
+                <div class="two-col-layout">
+                  <form class="panel" id="admin-product-form">
+                    <div class="panel-header">
+                      <div>
+                        <h3 class="panel-title" id="admin-product-form-title">Tambah Paket / Produk Baru</h3>
+                        <p class="panel-subtitle">Otomatis tampil di Preset Paket Cepat pada Voucher Designer.</p>
+                      </div>
+                    </div>
+
+                    <input type="hidden" id="admin-prod-id" value="" />
+                    <div class="form-grid two-col-fields">
+                      <div class="field-group">
+                        <label for="admin-prod-name" class="field-label">Nama Paket <span class="req">*</span></label>
+                        <input type="text" id="admin-prod-name" class="input" maxlength="30" placeholder="Contoh: Paket Gaming 5 Jam" required />
+                      </div>
+                      <div class="field-group">
+                        <label for="admin-prod-duration" class="field-label">Durasi <span class="req">*</span></label>
+                        <input type="text" id="admin-prod-duration" class="input" maxlength="25" placeholder="Contoh: 5 Jam" required />
+                      </div>
+                      <div class="field-group">
+                        <label for="admin-prod-price" class="field-label">Harga <span class="req">*</span></label>
+                        <input type="text" id="admin-prod-price" class="input mono" maxlength="25" placeholder="Contoh: Rp4.000" required />
+                      </div>
+                      <div class="field-group">
+                        <label for="admin-prod-prefix" class="field-label">Prefix Kode Voucher</label>
+                        <input type="text" id="admin-prod-prefix" class="input mono" maxlength="10" placeholder="Contoh: MRP" />
+                      </div>
+                      <div class="field-group full-span">
+                        <label for="admin-prod-desc" class="field-label">Keterangan Default</label>
+                        <input type="text" id="admin-prod-desc" class="input" maxlength="120" placeholder="Scan QR Code dengan kamera HP untuk terhubung." />
+                      </div>
+                      <div class="field-group full-span">
+                        <label class="checkbox-row">
+                          <input type="checkbox" id="admin-prod-active" checked />
+                          <span>Tampilkan paket ini di pilihan cepat Voucher Designer</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="form-actions">
+                      <button type="submit" class="btn btn-primary" id="admin-prod-save-btn">Simpan Produk</button>
+                      <button type="button" class="btn btn-secondary" id="admin-prod-cancel-btn" hidden>Batal Edit</button>
+                    </div>
+                  </form>
+
+                  <div class="panel">
+                    <div class="panel-header">
+                      <div>
+                        <h3 class="panel-title">Daftar Produk &amp; Harga Aktif</h3>
+                        <p class="panel-subtitle" id="admin-prod-count-label">6 paket tersimpan</p>
+                      </div>
+                    </div>
+                    <div class="admin-product-list" id="admin-product-list"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Admin Tab 2: Tampilan & Branding -->
+              <div class="admin-tab-panel" id="admin-panel-display">
+                <form class="panel" id="admin-display-form">
+                  <div class="panel-header">
+                    <div>
+                      <h3 class="panel-title">Pengaturan Tampilan &amp; Default Designer</h3>
+                      <p class="panel-subtitle">Atur tampilan standar saat aplikasi dibuka atau saat memuat pengaturan bawaan. Branding utama MY REP tetap permanen.</p>
+                    </div>
+                  </div>
+
+                  <div class="form-grid two-col-fields">
+                    <div class="field-group">
+                      <label for="admin-def-theme" class="field-label">Tema Default Dashboard</label>
+                      <select id="admin-def-theme" class="input select-input">
+                        <option value="light">Mode Terang</option>
+                        <option value="dark">Mode Gelap</option>
+                      </select>
+                    </div>
+                    <div class="field-group">
+                      <label for="admin-def-template" class="field-label">Template Default Voucher</label>
+                      <select id="admin-def-template" class="input select-input">
+                        <option value="modern-blue">Modern Blue</option>
+                        <option value="dark-premium">Dark Premium</option>
+                        <option value="cyber-neon">Cyber Neon</option>
+                        <option value="minimalist-white">Minimalist White</option>
+                        <option value="professional-network">Professional Network</option>
+                      </select>
+                    </div>
+                    <div class="field-group">
+                      <label for="admin-def-voucher-name" class="field-label">Nama Voucher Default</label>
+                      <input type="text" id="admin-def-voucher-name" class="input" maxlength="40" placeholder="MY REP WIFI" />
+                    </div>
+                    <div class="field-group">
+                      <label for="admin-def-outlet" class="field-label">Sub-Nama Outlet / Lokasi (Opsional)</label>
+                      <input type="text" id="admin-def-outlet" class="input" maxlength="30" placeholder="Contoh: Cabang Pusat" />
+                    </div>
+                    <div class="field-group">
+                      <label for="admin-def-qr-pos" class="field-label">Posisi QR Default</label>
+                      <select id="admin-def-qr-pos" class="input select-input">
+                        <option value="right">Kanan</option>
+                        <option value="left">Kiri</option>
+                        <option value="top">Atas</option>
+                        <option value="center">Tengah</option>
+                      </select>
+                    </div>
+                    <div class="field-group">
+                      <label for="admin-def-text-size" class="field-label">Ukuran Teks Default</label>
+                      <select id="admin-def-text-size" class="input select-input">
+                        <option value="sm">Kecil</option>
+                        <option value="md">Sedang</option>
+                        <option value="lg">Besar</option>
+                      </select>
+                    </div>
+                    <div class="field-group full-span">
+                      <label for="admin-def-desc" class="field-label">Deskripsi / Catatan Kaki Default</label>
+                      <input type="text" id="admin-def-desc" class="input" maxlength="140" />
+                    </div>
+
+                    <div class="field-group full-span">
+                      <span class="field-label">Warna Default Kartu (Opsional Override)</span>
+                      <div class="color-picker-grid">
+                        <label class="color-picker-card">
+                          <span>Latar</span>
+                          <div class="color-input-row">
+                            <input type="color" id="admin-def-bg" value="#0A192F" />
+                            <span class="mono color-hex" id="admin-hex-bg">#0A192F</span>
+                          </div>
+                        </label>
+                        <label class="color-picker-card">
+                          <span>Teks</span>
+                          <div class="color-input-row">
+                            <input type="color" id="admin-def-text" value="#FFFFFF" />
+                            <span class="mono color-hex" id="admin-hex-text">#FFFFFF</span>
+                          </div>
+                        </label>
+                        <label class="color-picker-card">
+                          <span>Aksen</span>
+                          <div class="color-input-row">
+                            <input type="color" id="admin-def-accent" value="#22D3EE" />
+                            <span class="mono color-hex" id="admin-hex-accent">#22D3EE</span>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="field-group full-span">
+                      <span class="field-label">Visibilitas Elemen Default</span>
+                      <div class="toggle-list">
+                        <label class="switch-row">
+                          <span>Tampilkan Harga Secara Default</span>
+                          <input type="checkbox" id="admin-def-show-price" checked />
+                        </label>
+                        <label class="switch-row">
+                          <span>Tampilkan Password di Kartu Secara Default</span>
+                          <input type="checkbox" id="admin-def-show-pass" checked />
+                        </label>
+                        <label class="switch-row">
+                          <span>Tampilkan Kode Voucher Secara Default</span>
+                          <input type="checkbox" id="admin-def-show-code" checked />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Simpan &amp; Terapkan Tampilan</button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Admin Tab 3: Cetak, PIN & Backup -->
+              <div class="admin-tab-panel" id="admin-panel-security">
+                <div class="two-col-layout">
+                  <form class="panel" id="admin-print-pin-form">
+                    <div class="panel-header">
+                      <div>
+                        <h3 class="panel-title">Preferensi Cetak &amp; PIN Opsional Lokal</h3>
+                        <p class="panel-subtitle">Status PIN saat ini: <strong id="admin-pin-status-text">Nonaktif (Akses Terbuka)</strong></p>
+                      </div>
+                    </div>
+
+                    <div class="form-grid">
+                      <div class="field-group">
+                        <label for="admin-def-print-format" class="field-label">Format Cetak Default</label>
+                        <select id="admin-def-print-format" class="input select-input">
+                          <option value="id1">Kartu Saku (ID-1 · 85.6 × 54 mm)</option>
+                          <option value="a4">Lembar A4 Grid Siap Potong</option>
+                          <option value="thermal58">Struk Thermal 58 mm</option>
+                          <option value="thermal80">Struk Thermal 80 mm</option>
+                        </select>
+                      </div>
+                      <div class="field-group">
+                        <label for="admin-def-a4-copies" class="field-label">Jumlah Kartu Default di A4</label>
+                        <select id="admin-def-a4-copies" class="input select-input">
+                          <option value="4">4 Kartu</option>
+                          <option value="6">6 Kartu</option>
+                          <option value="8">8 Kartu</option>
+                          <option value="10">10 Kartu</option>
+                        </select>
+                      </div>
+                      <div class="field-group">
+                        <label for="admin-new-pin" class="field-label">Atur / Ubah PIN Admin (4–6 digit angka)</label>
+                        <input type="password" inputmode="numeric" id="admin-new-pin" class="input mono" maxlength="6" placeholder="Kosongkan jika tidak ingin mengubah PIN" autocomplete="new-password" />
+                      </div>
+                    </div>
+
+                    <div class="form-actions">
+                      <button type="submit" class="btn btn-primary">Simpan Cetak &amp; PIN</button>
+                      <button type="button" class="btn btn-ghost" id="admin-disable-pin-btn" hidden>Nonaktifkan PIN</button>
+                    </div>
+                  </form>
+
+                  <div class="panel">
+                    <div class="panel-header">
+                      <div>
+                        <h3 class="panel-title">Cadangan Konfigurasi (JSON)</h3>
+                        <p class="panel-subtitle">Ekspor seluruh produk, harga, dan tampilan ke file JSON untuk dipindahkan ke perangkat lain atau direset.</p>
+                      </div>
+                    </div>
+
+                    <div class="form-grid">
+                      <button type="button" class="btn btn-secondary" id="admin-export-json-btn-2">
+                        Export Konfigurasi (.json)
+                      </button>
+                      <label for="admin-import-json-input" class="btn btn-outline-accent">
+                        Import Konfigurasi (.json)
+                      </label>
+                      <button type="button" class="btn btn-danger" id="admin-factory-reset-btn">
+                        Reset Pengaturan ke Default Awal
+                      </button>
+                    </div>
+
+                    <div class="notice-box">
+                      <strong>Catatan:</strong> File JSON hanya berisi katalog produk, harga, dan preferensi tampilan — tidak memuat password WiFi maupun riwayat sensitif.
+                    </div>
                   </div>
                 </div>
               </div>

@@ -9,6 +9,7 @@
   const STORAGE_KEYS = {
     THEME: 'myrep_wifi_theme_v1',
     HISTORY: 'myrep_wifi_history_v1',
+    ADMIN: 'myrep_wifi_admin_v1',
   };
 
   const TEMPLATES = {
@@ -49,6 +50,87 @@
     },
   };
 
+  const DEFAULT_PRODUCTS = [
+    {
+      id: 'prod_1h',
+      name: 'Hemat 1 Jam',
+      duration: '1 Jam',
+      price: 'Rp2.000',
+      codePrefix: 'MRP1H',
+      description: 'Scan QR Code dengan kamera HP untuk terhubung otomatis ke WiFi.',
+      active: true,
+    },
+    {
+      id: 'prod_3h',
+      name: 'Reguler 3 Jam',
+      duration: '3 Jam',
+      price: 'Rp3.000',
+      codePrefix: 'MRP3H',
+      description: 'Scan QR Code dengan kamera HP untuk terhubung otomatis ke WiFi.',
+      active: true,
+    },
+    {
+      id: 'prod_1d',
+      name: 'Harian 24 Jam',
+      duration: '1 Hari',
+      price: 'Rp5.000',
+      codePrefix: 'MRP1D',
+      description: 'Scan QR Code dengan kamera HP untuk terhubung otomatis ke WiFi.',
+      active: true,
+    },
+    {
+      id: 'prod_7d',
+      name: 'Mingguan',
+      duration: '7 Hari',
+      price: 'Rp20.000',
+      codePrefix: 'MRP7D',
+      description: 'Scan QR Code dengan kamera HP untuk terhubung otomatis ke WiFi.',
+      active: true,
+    },
+    {
+      id: 'prod_30d',
+      name: 'Bulanan',
+      duration: '30 Hari',
+      price: 'Rp50.000',
+      codePrefix: 'MRP30D',
+      description: 'Scan QR Code dengan kamera HP untuk terhubung otomatis ke WiFi.',
+      active: true,
+    },
+    {
+      id: 'prod_unl',
+      name: 'Unlimited',
+      duration: '1 Hari',
+      price: 'Rp5.000',
+      codePrefix: 'MRP',
+      description: 'Scan QR Code dengan kamera HP untuk terhubung otomatis ke WiFi.',
+      active: true,
+    },
+  ];
+
+  const DEFAULT_ADMIN_CONFIG = {
+    pinHash: '',
+    products: DEFAULT_PRODUCTS.map((p) => ({ ...p })),
+    displayDefaults: {
+      theme: 'light',
+      templateId: 'modern-blue',
+      voucherName: 'MY REP WIFI',
+      outletLabel: '',
+      defaultDescription: 'Scan QR Code dengan kamera HP untuk terhubung otomatis ke WiFi.',
+      customBg: TEMPLATES['modern-blue'].bg,
+      customText: TEMPLATES['modern-blue'].text,
+      customAccent: TEMPLATES['modern-blue'].accent,
+      textSize: 'md',
+      qrPosition: 'right',
+      showPrice: true,
+      showPassword: true,
+      showCode: true,
+    },
+    printDefaults: {
+      format: 'id1',
+      a4Copies: 8,
+    },
+  };
+
   const DEFAULT_SAMPLE_WIFI = {
     ssid: 'MY_REP_WIFI',
     password: 'myrep123',
@@ -58,6 +140,7 @@
 
   const DEFAULT_DESIGNER = {
     voucherName: 'MY REP WIFI',
+    outletLabel: '',
     packageName: 'Unlimited',
     duration: '1 Hari',
     price: 'Rp5.000',
@@ -72,6 +155,7 @@
     showPrice: true,
     showPassword: true,
     showCode: true,
+    useCustomQr: false,
   };
 
   const state = {
@@ -85,6 +169,27 @@
     printFormat: 'id1',
     printCopies: 8,
     pendingConfirmAction: null,
+    adminConfig: JSON.parse(JSON.stringify(DEFAULT_ADMIN_CONFIG)),
+    adminUnlocked: true,
+    customQr: {
+      sourceType: 'wifi',
+      wifi: { ...DEFAULT_SAMPLE_WIFI },
+      customText: 'https://myrep.example.com',
+      moduleStyle: 'square',
+      fgColor: '#0A192F',
+      bgColor: '#FFFFFF',
+      logoImage: null,
+      logoFileName: '',
+      logoShape: 'rounded',
+      logoSizePct: 22,
+      logoPad: 6,
+      frameEnabled: false,
+      frameImage: null,
+      frameFileName: '',
+      frameTitle: 'SCAN WIFI MY REP',
+      frameSubtitle: 'Connect Smarter, Stay Connected.',
+      frameColor: '#2563EB',
+    },
   };
 
   // =========================================================================
@@ -124,14 +229,15 @@
 
   /**
    * Generates a real QR Code module matrix using qrcode-generator CDN,
-   * with a compact pure-JS Byte-mode QR Version 1-10 fallback if CDN is offline.
+   * with a compact pure-JS Byte-mode QR Version 1-10 fallback (supports EC M and H).
    */
-  function generateQrMatrix(payload) {
+  function generateQrMatrix(payload, ecLevel = 'M') {
     const text = payload || 'WIFI:T:WPA;S:MY_REP_WIFI;P:myrep123;;';
+    const level = ecLevel === 'H' ? 'H' : 'M';
 
     if (typeof window.qrcode === 'function') {
       try {
-        const qr = window.qrcode(0, 'M');
+        const qr = window.qrcode(0, level);
         qr.addData(text, 'Byte');
         qr.make();
         const count = qr.getModuleCount();
@@ -149,41 +255,50 @@
       }
     }
 
-    return fallbackQrEncode(text);
+    return fallbackQrEncode(text, level);
   }
 
-  // Compact Pure-JS QR Code Byte-Mode Encoder (EC Level M, Versions 1..10)
-  function fallbackQrEncode(text) {
+  // Compact Pure-JS QR Code Byte-Mode Encoder (EC Level M & H, Versions 1..10)
+  function fallbackQrEncode(text, ecLevel = 'M') {
     const utf8 = Array.from(new TextEncoder().encode(text));
-    // Version capacities in bytes for EC Level M (Versions 1..10)
-    const VER_CAP = [0, 14, 26, 42, 62, 84, 106, 122, 152, 180, 213];
-    // Total data codewords + EC codewords per block for Level M: [totalData, blocks, ecPerBlock]
-    const VER_INFO = [
-      null,
-      [16, 1, 10],
-      [28, 1, 16],
-      [44, 1, 26],
-      [64, 2, 18],
-      [86, 2, 24],
-      [108, 4, 16],
-      [124, 4, 18],
-      [154, 2, 22], // V8 has 2+2 blocks -> handled via groups below
-      [182, 3, 22],
-      [216, 4, 26],
-    ];
-    const VER_BLOCKS = [
-      null,
-      [[1, 16, 10]],
-      [[1, 28, 16]],
-      [[1, 44, 26]],
-      [[2, 32, 18]],
-      [[2, 43, 24]],
-      [[4, 27, 16]],
-      [[4, 31, 18]],
-      [[2, 38, 22], [2, 39, 22]],
-      [[3, 36, 22], [2, 37, 22]],
-      [[4, 43, 26], [1, 44, 26]],
-    ];
+    const isHigh = ecLevel === 'H';
+
+    const VER_CAP = isHigh
+      ? [0, 7, 14, 24, 34, 44, 58, 64, 84, 98, 119]
+      : [0, 14, 26, 42, 62, 84, 106, 122, 152, 180, 213];
+
+    const VER_TOTAL_DATA = isHigh
+      ? [0, 9, 16, 26, 36, 46, 60, 66, 86, 100, 122]
+      : [0, 16, 28, 44, 64, 86, 108, 124, 154, 182, 216];
+
+    const VER_BLOCKS = isHigh
+      ? [
+          null,
+          [[1, 9, 17]],
+          [[1, 16, 28]],
+          [[2, 13, 22]],
+          [[4, 9, 16]],
+          [[2, 11, 22], [2, 12, 22]],
+          [[4, 15, 28]],
+          [[4, 13, 26], [1, 14, 26]],
+          [[4, 14, 26], [2, 15, 26]],
+          [[4, 12, 24], [4, 13, 24]],
+          [[6, 15, 28], [2, 16, 28]],
+        ]
+      : [
+          null,
+          [[1, 16, 10]],
+          [[1, 28, 16]],
+          [[1, 44, 26]],
+          [[2, 32, 18]],
+          [[2, 43, 24]],
+          [[4, 27, 16]],
+          [[4, 31, 18]],
+          [[2, 38, 22], [2, 39, 22]],
+          [[3, 36, 22], [2, 37, 22]],
+          [[4, 43, 26], [1, 44, 26]],
+        ];
+
     const ALIGN_POS = [
       [],
       [],
@@ -202,7 +317,7 @@
     while (ver <= 10 && utf8.length > VER_CAP[ver]) ver += 1;
     if (ver > 10) ver = 10;
 
-    const totalDataBytes = VER_INFO[ver][0];
+    const totalDataBytes = VER_TOTAL_DATA[ver];
     const bits = [];
     const pushBits = (val, len) => {
       for (let i = len - 1; i >= 0; i -= 1) {
@@ -417,8 +532,9 @@
     };
 
     const writeFormat = (grid, maskId) => {
-      // EC Level M = 00
-      const data = (0 << 3) | maskId;
+      // EC Level: M = 00 (0), H = 10 (2)
+      const ecIndicator = isHigh ? 2 : 0;
+      const data = (ecIndicator << 3) | maskId;
       let rem = data << 10;
       for (let i = 4; i >= 0; i -= 1) {
         if ((rem >>> (i + 10)) & 1) rem ^= 0x537 << i;
@@ -507,6 +623,181 @@
     }
   }
 
+  function isFinderModule(r, c, count) {
+    return (
+      (r < 7 && c < 7) ||
+      (r < 7 && c >= count - 7) ||
+      (r >= count - 7 && c < 7)
+    );
+  }
+
+  function drawStyledQrOnContext(ctx, originX, originY, areaSize, matrix, opts) {
+    const quiet = 2;
+    const totalMod = matrix.count + quiet * 2;
+    const modSize = areaSize / totalMod;
+    const fgColor = opts.fgColor || '#0A192F';
+    const bgColor = opts.bgColor || '#FFFFFF';
+    const style = opts.moduleStyle || 'square';
+
+    ctx.save();
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(originX, originY, areaSize, areaSize);
+
+    ctx.fillStyle = fgColor;
+    for (let r = 0; r < matrix.count; r += 1) {
+      for (let c = 0; c < matrix.count; c += 1) {
+        if (!matrix.grid[r][c]) continue;
+        const x = originX + (c + quiet) * modSize;
+        const y = originY + (r + quiet) * modSize;
+
+        if (style === 'square' || isFinderModule(r, c, matrix.count)) {
+          ctx.fillRect(x, y, Math.ceil(modSize), Math.ceil(modSize));
+        } else if (style === 'dots') {
+          ctx.beginPath();
+          ctx.arc(x + modSize / 2, y + modSize / 2, modSize * 0.42, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // rounded
+          const pad = modSize * 0.08;
+          const s = modSize - pad * 2;
+          drawRoundedRect(ctx, x + pad, y + pad, s, s, s * 0.34);
+          ctx.fill();
+        }
+      }
+    }
+
+    // Center Uploaded Logo Overlay
+    if (opts.logoImage) {
+      const qrInnerPx = matrix.count * modSize;
+      const pct = Math.min(26, Math.max(14, Number(opts.logoSizePct) || 22));
+      const logoSize = qrInnerPx * (pct / 100);
+      const padPx = (Number(opts.logoPad) || 6) * (areaSize / 460);
+      const boxSize = logoSize + padPx * 2;
+      const cx = originX + areaSize / 2;
+      const cy = originY + areaSize / 2;
+      const bx = cx - boxSize / 2;
+      const by = cy - boxSize / 2;
+      const lx = cx - logoSize / 2;
+      const ly = cy - logoSize / 2;
+
+      const clipShape = (shape, x, y, size) => {
+        ctx.beginPath();
+        if (shape === 'circle') {
+          ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+        } else if (shape === 'rounded') {
+          drawRoundedRect(ctx, x, y, size, size, size * 0.22);
+        } else {
+          ctx.rect(x, y, size, size);
+        }
+        ctx.closePath();
+      };
+
+      // White/bg halo around logo so QR modules never bleed into logo edges
+      ctx.save();
+      clipShape(opts.logoShape, bx, by, boxSize);
+      ctx.fillStyle = bgColor;
+      ctx.fill();
+      ctx.restore();
+
+      // Draw aspect-preserved cover-cropped logo inside shape
+      ctx.save();
+      clipShape(opts.logoShape, lx, ly, logoSize);
+      ctx.clip();
+      const img = opts.logoImage;
+      const iw = img.naturalWidth || img.width || 100;
+      const ih = img.naturalHeight || img.height || 100;
+      const scale = Math.max(logoSize / iw, logoSize / ih);
+      const dw = iw * scale;
+      const dh = ih * scale;
+      ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  function drawStyledQrToCanvas(canvas, matrix, opts, targetWidth = 520) {
+    if (!canvas || !matrix) return;
+    const ctx = canvas.getContext('2d');
+
+    if (!opts.frameEnabled) {
+      canvas.width = targetWidth;
+      canvas.height = targetWidth;
+      drawStyledQrOnContext(ctx, 0, 0, targetWidth, matrix, opts);
+      return;
+    }
+
+    const W = targetWidth;
+    const H = Math.round(targetWidth * 1.24);
+    canvas.width = W;
+    canvas.height = H;
+
+    // Frame Background (Uploaded image or solid/gradient accent card)
+    drawRoundedRect(ctx, 0, 0, W, H, Math.round(W * 0.055));
+    ctx.save();
+    ctx.clip();
+
+    if (opts.frameImage) {
+      const img = opts.frameImage;
+      const iw = img.naturalWidth || img.width || 100;
+      const ih = img.naturalHeight || img.height || 100;
+      const scale = Math.max(W / iw, H / ih);
+      const dw = iw * scale;
+      const dh = ih * scale;
+      ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      ctx.fillStyle = 'rgba(10, 25, 47, 0.48)';
+      ctx.fillRect(0, 0, W, H);
+    } else {
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, '#0A192F');
+      grad.addColorStop(1, opts.frameColor || '#2563EB');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Frame Header Title
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `800 ${Math.round(W * 0.058)}px "Plus Jakarta Sans", sans-serif`;
+    ctx.fillText(opts.frameTitle || 'SCAN WIFI MY REP', W / 2, Math.round(H * 0.085), W * 0.86);
+
+    // Safe White QR Dock inside Frame
+    const dockSize = Math.round(W * 0.74);
+    const dockX = Math.round((W - dockSize) / 2);
+    const dockY = Math.round(H * 0.16);
+    const dockPad = Math.round(dockSize * 0.06);
+
+    drawRoundedRect(ctx, dockX, dockY, dockSize, dockSize, Math.round(W * 0.04));
+    ctx.fillStyle = opts.bgColor || '#FFFFFF';
+    ctx.fill();
+
+    drawStyledQrOnContext(
+      ctx,
+      dockX + dockPad,
+      dockY + dockPad,
+      dockSize - dockPad * 2,
+      matrix,
+      opts
+    );
+
+    // Frame Footer Subtitle + MY REP Brand
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `600 ${Math.round(W * 0.036)}px "DM Sans", sans-serif`;
+    ctx.fillText(
+      opts.frameSubtitle || 'Connect Smarter, Stay Connected.',
+      W / 2,
+      Math.round(H * 0.86),
+      W * 0.86
+    );
+
+    ctx.fillStyle = '#22D3EE';
+    ctx.font = `800 ${Math.round(W * 0.034)}px "Plus Jakarta Sans", sans-serif`;
+    ctx.fillText('MY REP', W / 2, Math.round(H * 0.93));
+
+    ctx.restore();
+  }
+
   // =========================================================================
   // Safe DOM Helpers & Brand SVG Builder
   // =========================================================================
@@ -585,6 +876,23 @@
   // Voucher Card DOM Renderer (Safe textContent, Zero Unsanitized innerHTML)
   // =========================================================================
 
+  function getEffectiveVoucherQr(config, baseMatrix) {
+    if (config === state && config.designer.useCustomQr) {
+      const payload = buildWifiPayload(config.wifi) || state.qrPayload;
+      const ec = state.customQr.logoImage ? 'H' : 'M';
+      return {
+        styled: true,
+        matrix: generateQrMatrix(payload, ec),
+        opts: { ...state.customQr, frameEnabled: false },
+      };
+    }
+    return {
+      styled: false,
+      matrix: baseMatrix,
+      opts: null,
+    };
+  }
+
   function renderVoucherCardElement(config, qrMatrix) {
     const card = document.createElement('article');
     card.className = `voucher-card tpl-${config.designer.templateId} qr-pos-${config.designer.qrPosition} text-size-${config.designer.textSize}`;
@@ -605,11 +913,21 @@
     brandText.textContent = 'MY REP';
     brandLockup.appendChild(brandText);
 
+    const docWrap = document.createElement('div');
+    docWrap.style.textAlign = 'right';
     const docTitle = document.createElement('span');
     docTitle.className = 'vc-doc-title';
     docTitle.textContent = 'WIFI VOUCHER';
+    docWrap.appendChild(docTitle);
 
-    topBar.append(brandLockup, docTitle);
+    if (config.designer.outletLabel && config.designer.outletLabel.trim()) {
+      const outletEl = document.createElement('span');
+      outletEl.className = 'vc-outlet-sub';
+      outletEl.textContent = config.designer.outletLabel.trim();
+      docWrap.appendChild(outletEl);
+    }
+
+    topBar.append(brandLockup, docWrap);
     card.appendChild(topBar);
 
     // Body Section
@@ -682,7 +1000,13 @@
     const qrDock = document.createElement('div');
     qrDock.className = 'vc-qr-dock';
     const qrCanvas = document.createElement('canvas');
-    drawQrToCanvas(qrCanvas, qrMatrix, 220, 2);
+    const effQr = getEffectiveVoucherQr(config, qrMatrix);
+    if (effQr.styled) {
+      qrDock.style.background = effQr.opts.bgColor || '#FFFFFF';
+      drawStyledQrToCanvas(qrCanvas, effQr.matrix, effQr.opts, 240);
+    } else {
+      drawQrToCanvas(qrCanvas, effQr.matrix, 220, 2);
+    }
     qrDock.appendChild(qrCanvas);
 
     const scanHint = document.createElement('span');
@@ -884,15 +1208,24 @@
     ctx.fillStyle = customAccent;
     ctx.font = '700 22px "JetBrains Mono", monospace';
     ctx.textAlign = 'right';
-    ctx.fillText('WIFI VOUCHER', W - padX, topBarH / 2 + 1);
+    const hasOutlet = Boolean(config.designer.outletLabel && config.designer.outletLabel.trim());
+    ctx.fillText('WIFI VOUCHER', W - padX, hasOutlet ? topBarH / 2 - 9 : topBarH / 2 + 1);
+    if (hasOutlet) {
+      ctx.fillStyle = templateId === 'professional-network' ? '#CBD5E1' : customText;
+      ctx.globalAlpha = 0.78;
+      ctx.font = '600 15px "DM Sans", sans-serif';
+      ctx.fillText(config.designer.outletLabel.trim(), W - padX, topBarH / 2 + 16);
+      ctx.globalAlpha = 1;
+    }
 
     // 3. Body Layout Calculation
     const bodyTop = topBarH + 42;
     const bodyBottom = H - footerH - 24;
+    const effQr = getEffectiveVoucherQr(config, qrMatrix);
 
     const drawQrDockAt = (qx, qy, dockSize) => {
       drawRoundedRect(ctx, qx, qy, dockSize, dockSize, 22);
-      ctx.fillStyle = '#FFFFFF';
+      ctx.fillStyle = effQr.styled ? (effQr.opts.bgColor || '#FFFFFF') : '#FFFFFF';
       ctx.fill();
       if (templateId === 'cyber-neon' || templateId === 'minimalist-white') {
         ctx.lineWidth = 3;
@@ -900,25 +1233,37 @@
         ctx.stroke();
       }
 
-      const innerPad = 18;
-      const qrArea = dockSize - innerPad * 2;
-      const quiet = 2;
-      const totalMod = qrMatrix.count + quiet * 2;
-      const modPx = Math.floor(qrArea / totalMod);
-      const exactQr = modPx * totalMod;
-      const startX = qx + Math.floor((dockSize - exactQr) / 2);
-      const startY = qy + Math.floor((dockSize - exactQr) / 2);
+      if (effQr.styled) {
+        const innerPad = 14;
+        drawStyledQrOnContext(
+          ctx,
+          qx + innerPad,
+          qy + innerPad,
+          dockSize - innerPad * 2,
+          effQr.matrix,
+          effQr.opts
+        );
+      } else {
+        const innerPad = 18;
+        const qrArea = dockSize - innerPad * 2;
+        const quiet = 2;
+        const totalMod = effQr.matrix.count + quiet * 2;
+        const modPx = Math.floor(qrArea / totalMod);
+        const exactQr = modPx * totalMod;
+        const startX = qx + Math.floor((dockSize - exactQr) / 2);
+        const startY = qy + Math.floor((dockSize - exactQr) / 2);
 
-      ctx.fillStyle = '#000000';
-      for (let r = 0; r < qrMatrix.count; r += 1) {
-        for (let c = 0; c < qrMatrix.count; c += 1) {
-          if (qrMatrix.grid[r][c]) {
-            ctx.fillRect(
-              startX + (c + quiet) * modPx,
-              startY + (r + quiet) * modPx,
-              modPx,
-              modPx
-            );
+        ctx.fillStyle = '#000000';
+        for (let r = 0; r < effQr.matrix.count; r += 1) {
+          for (let c = 0; c < effQr.matrix.count; c += 1) {
+            if (effQr.matrix.grid[r][c]) {
+              ctx.fillRect(
+                startX + (c + quiet) * modPx,
+                startY + (r + quiet) * modPx,
+                modPx,
+                modPx
+              );
+            }
           }
         }
       }
@@ -1085,9 +1430,16 @@
     triggerCanvasDownload(canvas, `${safeSlug}.png`);
   }
 
-  function exportQrOnlyPng(ssid, matrix) {
+  function exportQrOnlyPng(ssid, matrix, useCustomStyle = false) {
     const canvas = document.createElement('canvas');
-    drawQrToCanvas(canvas, matrix, 900, 4);
+    if (useCustomStyle && state.designer.useCustomQr) {
+      const payload = buildWifiPayload(state.wifi) || state.qrPayload;
+      const ec = state.customQr.logoImage ? 'H' : 'M';
+      const customMatrix = generateQrMatrix(payload, ec);
+      drawStyledQrToCanvas(canvas, customMatrix, { ...state.customQr, frameEnabled: false }, 960);
+    } else {
+      drawQrToCanvas(canvas, matrix, 900, 4);
+    }
     const safeSlug = (ssid || 'wifi-qr').toLowerCase().replace(/[^a-z0-9]+/g, '-');
     triggerCanvasDownload(canvas, `qr-${safeSlug}.png`);
   }
@@ -1173,6 +1525,8 @@
     dashboard: 'Dashboard',
     'qr-generator': 'Buat QR WiFi',
     'voucher-designer': 'Voucher Designer',
+    'custom-qr': 'Custom QR Studio',
+    admin: 'Panel Admin',
     history: 'Riwayat Desain',
     guide: 'Panduan Penggunaan',
     about: 'Tentang MY REP',
@@ -1196,8 +1550,14 @@
       refreshDashboardStats();
       renderDashboardSample();
     } else if (viewId === 'voucher-designer') {
+      renderPackagePresets();
       syncDesignerInputsFromState();
       renderDesignerLivePreview();
+    } else if (viewId === 'custom-qr') {
+      syncCustomQrInputsFromState();
+      renderCustomQrPreview();
+    } else if (viewId === 'admin') {
+      refreshAdminAccessView();
     } else if (viewId === 'history') {
       refreshHistoryView();
     } else if (viewId === 'qr-generator') {
@@ -1411,6 +1771,48 @@
   // Voucher Designer Logic
   // =========================================================================
 
+  function renderPackagePresets() {
+    const grid = document.getElementById('package-preset-grid');
+    if (!grid) return;
+    clearElement(grid);
+
+    const activeProducts = (state.adminConfig.products || []).filter((p) => p.active !== false);
+    if (activeProducts.length === 0) {
+      const emptyMsg = document.createElement('span');
+      emptyMsg.className = 'field-hint';
+      emptyMsg.textContent = 'Belum ada paket aktif. Tambah paket melalui Panel Admin.';
+      grid.appendChild(emptyMsg);
+      return;
+    }
+
+    activeProducts.forEach((prod) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'preset-btn';
+      const isSelected =
+        state.designer.packageName === prod.name &&
+        state.designer.duration === prod.duration &&
+        state.designer.price === prod.price;
+      if (isSelected) btn.classList.add('is-selected');
+      btn.textContent = `${prod.name} · ${prod.price}`;
+      btn.addEventListener('click', () => {
+        state.designer.packageName = prod.name;
+        state.designer.duration = prod.duration;
+        state.designer.price = prod.price;
+        if (prod.codePrefix) {
+          state.designer.voucherCode = `${prod.codePrefix}001`;
+        }
+        if (prod.description) {
+          state.designer.description = prod.description;
+        }
+        renderPackagePresets();
+        syncDesignerInputsFromState();
+        renderDesignerLivePreview();
+      });
+      grid.appendChild(btn);
+    });
+  }
+
   function syncDesignerInputsFromState() {
     const setVal = (id, val) => {
       const el = document.getElementById(id);
@@ -1457,7 +1859,10 @@
     });
 
     const tplLabel = document.getElementById('preview-template-name');
-    if (tplLabel) tplLabel.textContent = TEMPLATES[state.designer.templateId].name;
+    if (tplLabel) tplLabel.textContent = TEMPLATES[state.designer.templateId]?.name || 'Modern Blue';
+
+    const customBanner = document.getElementById('designer-custom-qr-banner');
+    if (customBanner) customBanner.hidden = !state.designer.useCustomQr;
 
     const passInput = document.getElementById('des-password');
     const toggleBtn = document.getElementById('toggle-des-password-btn');
@@ -1522,12 +1927,20 @@
 
     const sub = document.createElement('div');
     sub.className = 'print-thermal-sub';
-    sub.textContent = `WIFI VOUCHER · ${config.designer.voucherName || 'MY REP WIFI'}`;
+    const outletPart = config.designer.outletLabel?.trim()
+      ? ` (${config.designer.outletLabel.trim()})`
+      : '';
+    sub.textContent = `WIFI VOUCHER · ${config.designer.voucherName || 'MY REP WIFI'}${outletPart}`;
 
     const qrBox = document.createElement('div');
     qrBox.className = 'print-thermal-qr';
     const qrCanvas = document.createElement('canvas');
-    drawQrToCanvas(qrCanvas, qrMatrix, 200, 2);
+    const effQr = getEffectiveVoucherQr(config, qrMatrix);
+    if (effQr.styled) {
+      drawStyledQrToCanvas(qrCanvas, effQr.matrix, effQr.opts, 200);
+    } else {
+      drawQrToCanvas(qrCanvas, effQr.matrix, 200, 2);
+    }
     qrBox.appendChild(qrCanvas);
 
     const table = document.createElement('table');
@@ -1758,6 +2171,7 @@
     const tpl = TEMPLATES[item.templateId] || TEMPLATES['modern-blue'];
     state.designer = {
       voucherName: item.designName || 'MY REP WIFI',
+      outletLabel: state.adminConfig.displayDefaults?.outletLabel || '',
       packageName: item.packageName || 'Unlimited',
       duration: item.duration || '1 Hari',
       price: item.price || 'Rp5.000',
@@ -1772,6 +2186,7 @@
       showPrice: cust.showPrice !== undefined ? cust.showPrice : true,
       showPassword: cust.showPassword !== undefined ? cust.showPassword : true,
       showCode: cust.showCode !== undefined ? cust.showCode : true,
+      useCustomQr: false,
     };
 
     regenerateActiveQrFromWifi();
@@ -1785,6 +2200,553 @@
     } else {
       showToast('Desain berhasil dimuat kembali.', 'success');
     }
+  }
+
+  // =========================================================================
+  // Custom QR Studio (Upload Image Logo / Frame & Styled QR Generator)
+  // =========================================================================
+
+  function getHexContrastRatio(hex1, hex2) {
+    const parseRgb = (hex) => {
+      const clean = String(hex || '#000000').replace('#', '');
+      const full = clean.length === 3
+        ? clean.split('').map((c) => c + c).join('')
+        : clean.padEnd(6, '0').slice(0, 6);
+      const num = parseInt(full, 16);
+      return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    };
+    const relLum = ([r, g, b]) => {
+      const [rs, gs, bs] = [r, g, b].map((c) => {
+        const s = c / 255;
+        return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+    };
+    const l1 = relLum(parseRgb(hex1));
+    const l2 = relLum(parseRgb(hex2));
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  }
+
+  function getCustomQrPayload() {
+    if (state.customQr.sourceType === 'custom') {
+      return state.customQr.customText.trim() || 'https://myrep.example.com';
+    }
+    return buildWifiPayload(state.customQr.wifi) || 'WIFI:T:WPA;S:MY_REP_WIFI;P:myrep123;;';
+  }
+
+  function renderCustomQrPreview() {
+    const canvas = document.getElementById('cqr-preview-canvas');
+    if (!canvas) return;
+    const payload = getCustomQrPayload();
+    const matrix = generateQrMatrix(payload, 'H');
+    drawStyledQrToCanvas(canvas, matrix, state.customQr, 520);
+
+    const warn = document.getElementById('cqr-contrast-warning');
+    if (warn) {
+      const ratio = getHexContrastRatio(state.customQr.fgColor, state.customQr.bgColor);
+      warn.hidden = ratio >= 3.2;
+    }
+  }
+
+  function syncCustomQrInputsFromState() {
+    const cqr = state.customQr;
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    };
+
+    setVal('cqr-ssid', cqr.wifi.ssid);
+    setVal('cqr-security', cqr.wifi.security);
+    setVal('cqr-password', cqr.wifi.password);
+    const hidChk = document.getElementById('cqr-hidden');
+    if (hidChk) hidChk.checked = Boolean(cqr.wifi.hidden);
+    const passEl = document.getElementById('cqr-password');
+    const passToggle = document.getElementById('toggle-cqr-password-btn');
+    if (passEl) passEl.disabled = cqr.wifi.security === 'nopass';
+    if (passToggle) passToggle.disabled = cqr.wifi.security === 'nopass';
+
+    setVal('cqr-custom-text', cqr.customText);
+
+    const wifiFields = document.getElementById('cqr-wifi-fields');
+    const customFields = document.getElementById('cqr-custom-fields');
+    if (wifiFields) wifiFields.hidden = cqr.sourceType !== 'wifi';
+    if (customFields) customFields.hidden = cqr.sourceType !== 'custom';
+
+    document.querySelectorAll('#cqr-source-control .seg-btn').forEach((btn) => {
+      btn.classList.toggle('is-active', btn.dataset.cqrSource === cqr.sourceType);
+    });
+    document.querySelectorAll('#cqr-logo-shape-control .seg-btn').forEach((btn) => {
+      btn.classList.toggle('is-active', btn.dataset.logoShape === cqr.logoShape);
+    });
+    document.querySelectorAll('#cqr-module-style-control .seg-btn').forEach((btn) => {
+      btn.classList.toggle('is-active', btn.dataset.moduleStyle === cqr.moduleStyle);
+    });
+
+    setVal('cqr-logo-size', cqr.logoSizePct);
+    const sizeVal = document.getElementById('cqr-logo-size-val');
+    if (sizeVal) sizeVal.textContent = String(cqr.logoSizePct);
+
+    setVal('cqr-logo-pad', cqr.logoPad);
+    const padVal = document.getElementById('cqr-logo-pad-val');
+    if (padVal) padVal.textContent = String(cqr.logoPad);
+
+    const logoStatus = document.getElementById('cqr-logo-status');
+    const rmLogoBtn = document.getElementById('cqr-remove-logo-btn');
+    if (logoStatus) {
+      logoStatus.textContent = cqr.logoImage
+        ? `Terpasang: ${cqr.logoFileName || 'logo-kustom'}`
+        : 'Pilih atau tarik file gambar logo ke sini';
+    }
+    if (rmLogoBtn) rmLogoBtn.hidden = !cqr.logoImage;
+
+    const frameChk = document.getElementById('cqr-frame-enabled');
+    const frameOpts = document.getElementById('cqr-frame-options');
+    if (frameChk) frameChk.checked = Boolean(cqr.frameEnabled);
+    if (frameOpts) frameOpts.hidden = !cqr.frameEnabled;
+
+    const frameStatus = document.getElementById('cqr-frame-status');
+    const rmFrameBtn = document.getElementById('cqr-remove-frame-btn');
+    if (frameStatus) {
+      frameStatus.textContent = cqr.frameImage
+        ? `Bingkai terpasang: ${cqr.frameFileName || 'bingkai-kustom'}`
+        : 'Unggah gambar latar bingkai (opsional)';
+    }
+    if (rmFrameBtn) rmFrameBtn.hidden = !cqr.frameImage;
+
+    setVal('cqr-frame-title', cqr.frameTitle);
+    setVal('cqr-frame-subtitle', cqr.frameSubtitle);
+
+    setVal('cqr-fg-color', cqr.fgColor);
+    setVal('cqr-bg-color', cqr.bgColor);
+    setVal('cqr-frame-color', cqr.frameColor);
+    const fgHex = document.getElementById('cqr-fg-hex');
+    const bgHex = document.getElementById('cqr-bg-hex');
+    const frHex = document.getElementById('cqr-frame-hex');
+    if (fgHex) fgHex.textContent = cqr.fgColor.toUpperCase();
+    if (bgHex) bgHex.textContent = cqr.bgColor.toUpperCase();
+    if (frHex) frHex.textContent = cqr.frameColor.toUpperCase();
+  }
+
+  function loadImageFileToCustomQr(file, targetKind) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Format file harus berupa gambar (PNG, JPG, WEBP, atau SVG).', 'error');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Ukuran gambar maksimal 10 MB.', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        if (targetKind === 'logo') {
+          state.customQr.logoImage = img;
+          state.customQr.logoFileName = file.name;
+        } else {
+          state.customQr.frameImage = img;
+          state.customQr.frameFileName = file.name;
+          state.customQr.frameEnabled = true;
+        }
+        syncCustomQrInputsFromState();
+        renderCustomQrPreview();
+        showToast(
+          targetKind === 'logo'
+            ? 'Gambar logo tengah QR berhasil dipasang.'
+            : 'Gambar bingkai QR berhasil dipasang.',
+          'success'
+        );
+      };
+      img.onerror = () => {
+        showToast('Gagal membaca file gambar. Coba gambar lain.', 'error');
+      };
+      img.src = String(ev.target?.result || '');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // =========================================================================
+  // Panel Admin (Products, Pricing, Display Defaults, Print, Optional PIN, JSON)
+  // =========================================================================
+
+  async function hashPin(pin) {
+    const raw = `myrep_pin_salt_v1:${String(pin || '')}`;
+    if (window.crypto?.subtle && window.TextEncoder) {
+      try {
+        const buf = await window.crypto.subtle.digest(
+          'SHA-256',
+          new TextEncoder().encode(raw)
+        );
+        const hex = Array.from(new Uint8Array(buf))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('');
+        return `sha256:${hex}`;
+      } catch (_err) {
+        // Fallback when crypto.subtle is blocked on non-HTTPS origins
+      }
+    }
+    let h1 = 0x811c9dc5;
+    let h2 = 0x9e3779b9;
+    for (let i = 0; i < raw.length; i += 1) {
+      const ch = raw.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 0x01000193) >>> 0;
+      h2 = Math.imul(h2 ^ (ch + i), 0x85ebca6b) >>> 0;
+    }
+    return `h1:${h1.toString(16)}_${h2.toString(16)}`;
+  }
+
+  function loadAdminConfig() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.ADMIN);
+      if (!raw) {
+        state.adminConfig = JSON.parse(JSON.stringify(DEFAULT_ADMIN_CONFIG));
+      } else {
+        const parsed = JSON.parse(raw);
+        state.adminConfig = {
+          pinHash: typeof parsed.pinHash === 'string' ? parsed.pinHash : '',
+          products: Array.isArray(parsed.products)
+            ? parsed.products.map((p) => ({
+                id: String(p.id || `prod_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`),
+                name: String(p.name || 'Paket WiFi'),
+                duration: String(p.duration || '1 Hari'),
+                price: String(p.price || 'Rp5.000'),
+                codePrefix: String(p.codePrefix || 'MRP'),
+                description: String(p.description || ''),
+                active: p.active !== false,
+              }))
+            : DEFAULT_PRODUCTS.map((p) => ({ ...p })),
+          displayDefaults: {
+            ...DEFAULT_ADMIN_CONFIG.displayDefaults,
+            ...(parsed.displayDefaults || {}),
+          },
+          printDefaults: {
+            ...DEFAULT_ADMIN_CONFIG.printDefaults,
+            ...(parsed.printDefaults || {}),
+          },
+        };
+      }
+    } catch (_err) {
+      state.adminConfig = JSON.parse(JSON.stringify(DEFAULT_ADMIN_CONFIG));
+    }
+
+    state.adminUnlocked = !state.adminConfig.pinHash;
+  }
+
+  function saveAdminConfig() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.ADMIN, JSON.stringify(state.adminConfig));
+    } catch (_err) {
+      showToast('Gagal menyimpan pengaturan Panel Admin ke localStorage.', 'error');
+    }
+  }
+
+  function buildDefaultDesignerFromAdmin() {
+    const def = state.adminConfig.displayDefaults || DEFAULT_ADMIN_CONFIG.displayDefaults;
+    const firstActive =
+      (state.adminConfig.products || []).find((p) => p.active !== false) || DEFAULT_PRODUCTS[5];
+    return {
+      voucherName: def.voucherName || 'MY REP WIFI',
+      outletLabel: def.outletLabel || '',
+      packageName: firstActive?.name || 'Unlimited',
+      duration: firstActive?.duration || '1 Hari',
+      price: firstActive?.price || 'Rp5.000',
+      voucherCode: `${firstActive?.codePrefix || 'MRP'}001`,
+      description: def.defaultDescription || DEFAULT_DESIGNER.description,
+      templateId: TEMPLATES[def.templateId] ? def.templateId : 'modern-blue',
+      customBg: def.customBg || TEMPLATES[def.templateId]?.bg || '#0A192F',
+      customText: def.customText || TEMPLATES[def.templateId]?.text || '#FFFFFF',
+      customAccent: def.customAccent || TEMPLATES[def.templateId]?.accent || '#22D3EE',
+      textSize: def.textSize || 'md',
+      qrPosition: def.qrPosition || 'right',
+      showPrice: def.showPrice !== undefined ? def.showPrice : true,
+      showPassword: def.showPassword !== undefined ? def.showPassword : true,
+      showCode: def.showCode !== undefined ? def.showCode : true,
+      useCustomQr: state.designer.useCustomQr || false,
+    };
+  }
+
+  function applyAdminDefaultsToApp(overrideTheme = false) {
+    const def = state.adminConfig.displayDefaults;
+    const pdef = state.adminConfig.printDefaults;
+
+    if (overrideTheme && def?.theme) {
+      applyTheme(def.theme);
+    }
+
+    state.printFormat = pdef?.format || 'id1';
+    state.printCopies = Number(pdef?.a4Copies) || 8;
+    document.querySelectorAll('.print-format-btn').forEach((b) => {
+      b.classList.toggle('is-active', b.dataset.printFormat === state.printFormat);
+    });
+    const copiesGroup = document.getElementById('print-copies-group');
+    if (copiesGroup) copiesGroup.hidden = state.printFormat !== 'a4';
+    const copiesSelect = document.getElementById('print-a4-copies');
+    if (copiesSelect) copiesSelect.value = String(state.printCopies);
+
+    const nextDef = buildDefaultDesignerFromAdmin();
+    state.designer = {
+      ...state.designer,
+      voucherName: nextDef.voucherName,
+      outletLabel: nextDef.outletLabel,
+      description: nextDef.description,
+      templateId: nextDef.templateId,
+      customBg: nextDef.customBg,
+      customText: nextDef.customText,
+      customAccent: nextDef.customAccent,
+      textSize: nextDef.textSize,
+      qrPosition: nextDef.qrPosition,
+      showPrice: nextDef.showPrice,
+      showPassword: nextDef.showPassword,
+      showCode: nextDef.showCode,
+    };
+  }
+
+  function refreshAdminAccessView() {
+    const gate = document.getElementById('admin-pin-gate');
+    const workspace = document.getElementById('admin-workspace');
+    const lockBtn = document.getElementById('admin-lock-btn');
+    const headerActions = document.getElementById('admin-header-actions');
+
+    const hasPin = Boolean(state.adminConfig.pinHash);
+    const locked = hasPin && !state.adminUnlocked;
+
+    if (gate) gate.hidden = !locked;
+    if (workspace) workspace.hidden = locked;
+    if (headerActions) headerActions.hidden = locked;
+    if (lockBtn) lockBtn.hidden = !hasPin || locked;
+
+    if (!locked) {
+      renderAdminProductList();
+      syncAdminDisplayForm();
+      syncAdminPrintPinForm();
+    }
+  }
+
+  function renderAdminProductList() {
+    const listEl = document.getElementById('admin-product-list');
+    const countEl = document.getElementById('admin-prod-count-label');
+    if (!listEl) return;
+    clearElement(listEl);
+
+    const products = state.adminConfig.products || [];
+    if (countEl) {
+      const activeCount = products.filter((p) => p.active !== false).length;
+      countEl.textContent = `${products.length} paket tersimpan (${activeCount} aktif)`;
+    }
+
+    if (products.length === 0) {
+      const p = document.createElement('p');
+      p.className = 'field-hint';
+      p.textContent = 'Belum ada produk. Tambahkan paket baru melalui form di samping.';
+      listEl.appendChild(p);
+      return;
+    }
+
+    products.forEach((prod) => {
+      const row = document.createElement('div');
+      row.className = `admin-product-row${prod.active === false ? ' is-inactive' : ''}`;
+
+      const info = document.createElement('div');
+      info.className = 'admin-prod-info';
+
+      const title = document.createElement('div');
+      title.className = 'admin-prod-title';
+      title.textContent = `${prod.name} `;
+
+      const badge = document.createElement('span');
+      badge.className = `admin-status-tag${prod.active === false ? ' is-off' : ''}`;
+      badge.textContent = prod.active === false ? 'Nonaktif' : 'Aktif';
+      title.appendChild(badge);
+
+      const meta = document.createElement('div');
+      meta.className = 'admin-prod-meta';
+      meta.textContent = `${prod.duration} · ${prod.price}${prod.codePrefix ? ` · Kode: ${prod.codePrefix}` : ''}`;
+
+      info.append(title, meta);
+
+      const btns = document.createElement('div');
+      btns.className = 'admin-prod-actions';
+
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'btn btn-secondary btn-sm';
+      editBtn.textContent = 'Edit';
+      editBtn.addEventListener('click', () => loadProductIntoAdminForm(prod));
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'btn btn-ghost btn-sm';
+      toggleBtn.textContent = prod.active === false ? 'Aktifkan' : 'Nonaktifkan';
+      toggleBtn.addEventListener('click', () => {
+        prod.active = prod.active === false;
+        saveAdminConfig();
+        renderAdminProductList();
+        renderPackagePresets();
+        showToast(
+          prod.active ? `Paket "${prod.name}" diaktifkan.` : `Paket "${prod.name}" dinonaktifkan.`,
+          'success'
+        );
+      });
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'btn btn-ghost btn-sm';
+      delBtn.textContent = 'Hapus';
+      delBtn.addEventListener('click', () => {
+        openConfirmationModal(
+          'Hapus Produk Paket',
+          `Hapus paket "${prod.name}" (${prod.price}) dari katalog admin?`,
+          () => {
+            state.adminConfig.products = state.adminConfig.products.filter((p) => p.id !== prod.id);
+            saveAdminConfig();
+            renderAdminProductList();
+            renderPackagePresets();
+            showToast('Paket berhasil dihapus.', 'success');
+          }
+        );
+      });
+
+      btns.append(editBtn, toggleBtn, delBtn);
+      row.append(info, btns);
+      listEl.appendChild(row);
+    });
+  }
+
+  function loadProductIntoAdminForm(prod) {
+    document.getElementById('admin-prod-id').value = prod.id;
+    document.getElementById('admin-prod-name').value = prod.name;
+    document.getElementById('admin-prod-duration').value = prod.duration;
+    document.getElementById('admin-prod-price').value = prod.price;
+    document.getElementById('admin-prod-prefix').value = prod.codePrefix || '';
+    document.getElementById('admin-prod-desc').value = prod.description || '';
+    document.getElementById('admin-prod-active').checked = prod.active !== false;
+    document.getElementById('admin-product-form-title').textContent = `Edit Paket: ${prod.name}`;
+    document.getElementById('admin-prod-save-btn').textContent = 'Perbarui Produk';
+    document.getElementById('admin-prod-cancel-btn').hidden = false;
+  }
+
+  function resetAdminProductForm() {
+    document.getElementById('admin-prod-id').value = '';
+    document.getElementById('admin-product-form')?.reset();
+    document.getElementById('admin-prod-active').checked = true;
+    document.getElementById('admin-product-form-title').textContent = 'Tambah Paket / Produk Baru';
+    document.getElementById('admin-prod-save-btn').textContent = 'Simpan Produk';
+    document.getElementById('admin-prod-cancel-btn').hidden = true;
+  }
+
+  function syncAdminDisplayForm() {
+    const def = state.adminConfig.displayDefaults;
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    };
+    const setChk = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = Boolean(val);
+    };
+
+    setVal('admin-def-theme', def.theme || 'light');
+    setVal('admin-def-template', def.templateId || 'modern-blue');
+    setVal('admin-def-voucher-name', def.voucherName || 'MY REP WIFI');
+    setVal('admin-def-outlet', def.outletLabel || '');
+    setVal('admin-def-qr-pos', def.qrPosition || 'right');
+    setVal('admin-def-text-size', def.textSize || 'md');
+    setVal('admin-def-desc', def.defaultDescription || '');
+
+    setVal('admin-def-bg', def.customBg || '#0A192F');
+    setVal('admin-def-text', def.customText || '#FFFFFF');
+    setVal('admin-def-accent', def.customAccent || '#22D3EE');
+    const hexBg = document.getElementById('admin-hex-bg');
+    const hexText = document.getElementById('admin-hex-text');
+    const hexAccent = document.getElementById('admin-hex-accent');
+    if (hexBg) hexBg.textContent = (def.customBg || '#0A192F').toUpperCase();
+    if (hexText) hexText.textContent = (def.customText || '#FFFFFF').toUpperCase();
+    if (hexAccent) hexAccent.textContent = (def.customAccent || '#22D3EE').toUpperCase();
+
+    setChk('admin-def-show-price', def.showPrice);
+    setChk('admin-def-show-pass', def.showPassword);
+    setChk('admin-def-show-code', def.showCode);
+  }
+
+  function syncAdminPrintPinForm() {
+    const pdef = state.adminConfig.printDefaults;
+    const fmtEl = document.getElementById('admin-def-print-format');
+    const copiesEl = document.getElementById('admin-def-a4-copies');
+    const pinStatus = document.getElementById('admin-pin-status-text');
+    const disableBtn = document.getElementById('admin-disable-pin-btn');
+    const newPinEl = document.getElementById('admin-new-pin');
+
+    if (fmtEl) fmtEl.value = pdef.format || 'id1';
+    if (copiesEl) copiesEl.value = String(pdef.a4Copies || 8);
+    if (newPinEl) newPinEl.value = '';
+
+    const hasPin = Boolean(state.adminConfig.pinHash);
+    if (pinStatus) {
+      pinStatus.textContent = hasPin ? 'Aktif (Terkunci dengan PIN Lokal)' : 'Nonaktif (Akses Terbuka)';
+    }
+    if (disableBtn) disableBtn.hidden = !hasPin;
+  }
+
+  function exportAdminConfigToJson() {
+    const payload = {
+      schema: 'myrep-wifi-admin-v1',
+      exportedAt: new Date().toISOString(),
+      products: state.adminConfig.products,
+      displayDefaults: state.adminConfig.displayDefaults,
+      printDefaults: state.adminConfig.printDefaults,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `myrep-admin-config-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('File JSON konfigurasi Panel Admin berhasil diekspor.', 'success');
+  }
+
+  function importAdminConfigFromFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(String(ev.target?.result || ''));
+        if (!parsed || !Array.isArray(parsed.products) || !parsed.displayDefaults) {
+          throw new Error('Struktur JSON tidak valid.');
+        }
+        state.adminConfig.products = parsed.products.map((p, idx) => ({
+          id: String(p.id || `imp_${Date.now()}_${idx}`),
+          name: String(p.name || 'Paket WiFi').slice(0, 30),
+          duration: String(p.duration || '1 Hari').slice(0, 25),
+          price: String(p.price || 'Rp5.000').slice(0, 25),
+          codePrefix: String(p.codePrefix || 'MRP').slice(0, 10),
+          description: String(p.description || '').slice(0, 140),
+          active: p.active !== false,
+        }));
+        state.adminConfig.displayDefaults = {
+          ...DEFAULT_ADMIN_CONFIG.displayDefaults,
+          ...parsed.displayDefaults,
+        };
+        state.adminConfig.printDefaults = {
+          ...DEFAULT_ADMIN_CONFIG.printDefaults,
+          ...(parsed.printDefaults || {}),
+        };
+        saveAdminConfig();
+        applyAdminDefaultsToApp(true);
+        renderPackagePresets();
+        refreshAdminAccessView();
+        syncDesignerInputsFromState();
+        renderDesignerLivePreview();
+        showToast('Konfigurasi JSON berhasil diimpor dan diterapkan.', 'success');
+      } catch (_err) {
+        showToast('File JSON tidak valid atau rusak.', 'error');
+      }
+    };
+    reader.readAsText(file);
   }
 
   // =========================================================================
@@ -1821,7 +2783,8 @@
     // Dashboard Sample Button
     document.getElementById('dash-load-sample-btn')?.addEventListener('click', () => {
       state.wifi = { ...DEFAULT_SAMPLE_WIFI };
-      state.designer = { ...DEFAULT_DESIGNER };
+      state.designer = buildDefaultDesignerFromAdmin();
+      state.designer.useCustomQr = false;
       regenerateActiveQrFromWifi();
       switchView('voucher-designer');
       showToast('Contoh voucher MY REP dimuat ke Designer.', 'success');
@@ -1895,7 +2858,7 @@
 
     document.getElementById('download-qr-only-btn')?.addEventListener('click', () => {
       if (!state.qrMatrix) regenerateActiveQrFromWifi();
-      exportQrOnlyPng(state.wifi.ssid, state.qrMatrix);
+      exportQrOnlyPng(state.wifi.ssid, state.qrMatrix, false);
       showToast('QR Code PNG berhasil diunduh.', 'success');
     });
 
@@ -1911,6 +2874,7 @@
           ? ''
           : document.getElementById('qr-password').value;
       state.wifi.hidden = document.getElementById('qr-hidden').checked;
+      state.designer.useCustomQr = false;
       regenerateActiveQrFromWifi();
       switchView('voucher-designer');
       showToast('Kredensial & QR WiFi ditransfer ke Voucher Designer.', 'success');
@@ -1931,19 +2895,6 @@
       });
     });
 
-    // Quick Package Presets
-    document.querySelectorAll('.preset-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('is-selected'));
-        btn.classList.add('is-selected');
-        state.designer.packageName = btn.dataset.pkg || '';
-        state.designer.duration = btn.dataset.dur || '';
-        state.designer.price = btn.dataset.price || '';
-        syncDesignerInputsFromState();
-        renderDesignerLivePreview();
-      });
-    });
-
     // Designer Info Live Inputs
     const bindInput = (id, handler) => {
       document.getElementById(id)?.addEventListener('input', handler);
@@ -1959,14 +2910,17 @@
     });
     bindInput('des-package', (e) => {
       state.designer.packageName = e.target.value;
+      renderPackagePresets();
       renderDesignerLivePreview();
     });
     bindInput('des-duration', (e) => {
       state.designer.duration = e.target.value;
+      renderPackagePresets();
       renderDesignerLivePreview();
     });
     bindInput('des-price', (e) => {
       state.designer.price = e.target.value;
+      renderPackagePresets();
       renderDesignerLivePreview();
     });
     bindInput('des-description', (e) => {
@@ -2064,10 +3018,19 @@
       renderDesignerLivePreview();
     });
 
+    document.getElementById('designer-clear-custom-qr-btn')?.addEventListener('click', () => {
+      state.designer.useCustomQr = false;
+      syncDesignerInputsFromState();
+      renderDesignerLivePreview();
+      showToast('QR dikembalikan ke gaya standar.', 'success');
+    });
+
     document.getElementById('reset-designer-example-btn')?.addEventListener('click', () => {
       state.wifi = { ...DEFAULT_SAMPLE_WIFI };
-      state.designer = { ...DEFAULT_DESIGNER };
+      state.designer = buildDefaultDesignerFromAdmin();
+      state.designer.useCustomQr = false;
       regenerateActiveQrFromWifi();
+      renderPackagePresets();
       syncDesignerInputsFromState();
       renderDesignerLivePreview();
       showToast('Contoh voucher default dimuat ulang.', 'success');
@@ -2084,11 +3047,432 @@
     document.getElementById('designer-download-qr-btn')?.addEventListener('click', () => {
       if (!validateDesignerWifiForExport()) return;
       if (!state.qrMatrix) regenerateActiveQrFromWifi();
-      exportQrOnlyPng(state.wifi.ssid, state.qrMatrix);
+      exportQrOnlyPng(state.wifi.ssid, state.qrMatrix, true);
       showToast('QR Code PNG berhasil diunduh.', 'success');
     });
 
     document.getElementById('save-history-btn')?.addEventListener('click', saveCurrentDesignToHistory);
+
+    // =====================================================================
+    // Custom QR Studio Event Bindings
+    // =====================================================================
+
+    document.getElementById('cqr-sync-wifi-btn')?.addEventListener('click', () => {
+      state.customQr.sourceType = 'wifi';
+      state.customQr.wifi = { ...state.wifi };
+      syncCustomQrInputsFromState();
+      renderCustomQrPreview();
+      showToast('Data WiFi aktif disinkronkan ke Custom QR Studio.', 'success');
+    });
+
+    document.querySelectorAll('#cqr-source-control .seg-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        state.customQr.sourceType = btn.dataset.cqrSource;
+        syncCustomQrInputsFromState();
+        renderCustomQrPreview();
+      });
+    });
+
+    bindInput('cqr-ssid', (e) => {
+      state.customQr.wifi.ssid = e.target.value;
+      renderCustomQrPreview();
+    });
+    bindInput('cqr-password', (e) => {
+      state.customQr.wifi.password = e.target.value;
+      renderCustomQrPreview();
+    });
+    document.getElementById('cqr-security')?.addEventListener('change', (e) => {
+      state.customQr.wifi.security = e.target.value;
+      if (state.customQr.wifi.security === 'nopass') state.customQr.wifi.password = '';
+      syncCustomQrInputsFromState();
+      renderCustomQrPreview();
+    });
+    document.getElementById('cqr-hidden')?.addEventListener('change', (e) => {
+      state.customQr.wifi.hidden = e.target.checked;
+      renderCustomQrPreview();
+    });
+    document.getElementById('toggle-cqr-password-btn')?.addEventListener('click', (e) => {
+      const input = document.getElementById('cqr-password');
+      if (!input) return;
+      const isPass = input.type === 'password';
+      input.type = isPass ? 'text' : 'password';
+      e.currentTarget.textContent = isPass ? 'Sembunyikan' : 'Tampilkan';
+    });
+    bindInput('cqr-custom-text', (e) => {
+      state.customQr.customText = e.target.value;
+      renderCustomQrPreview();
+    });
+
+    // Logo Upload & Drag-Drop
+    document.getElementById('cqr-logo-file')?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) loadImageFileToCustomQr(file, 'logo');
+      e.target.value = '';
+    });
+
+    const logoDropzone = document.getElementById('cqr-logo-dropzone');
+    if (logoDropzone) {
+      logoDropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        logoDropzone.classList.add('is-dragover');
+      });
+      logoDropzone.addEventListener('dragleave', () => {
+        logoDropzone.classList.remove('is-dragover');
+      });
+      logoDropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        logoDropzone.classList.remove('is-dragover');
+        const file = e.dataTransfer?.files?.[0];
+        if (file) loadImageFileToCustomQr(file, 'logo');
+      });
+    }
+
+    document.getElementById('cqr-remove-logo-btn')?.addEventListener('click', () => {
+      state.customQr.logoImage = null;
+      state.customQr.logoFileName = '';
+      syncCustomQrInputsFromState();
+      renderCustomQrPreview();
+      showToast('Logo tengah QR dihapus.', 'success');
+    });
+
+    document.querySelectorAll('#cqr-logo-shape-control .seg-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        state.customQr.logoShape = btn.dataset.logoShape;
+        syncCustomQrInputsFromState();
+        renderCustomQrPreview();
+      });
+    });
+
+    bindInput('cqr-logo-size', (e) => {
+      state.customQr.logoSizePct = Number(e.target.value) || 22;
+      const val = document.getElementById('cqr-logo-size-val');
+      if (val) val.textContent = String(state.customQr.logoSizePct);
+      renderCustomQrPreview();
+    });
+
+    bindInput('cqr-logo-pad', (e) => {
+      state.customQr.logoPad = Number(e.target.value) || 6;
+      const val = document.getElementById('cqr-logo-pad-val');
+      if (val) val.textContent = String(state.customQr.logoPad);
+      renderCustomQrPreview();
+    });
+
+    // Frame Upload & Styling
+    document.getElementById('cqr-frame-enabled')?.addEventListener('change', (e) => {
+      state.customQr.frameEnabled = e.target.checked;
+      syncCustomQrInputsFromState();
+      renderCustomQrPreview();
+    });
+
+    document.getElementById('cqr-frame-file')?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) loadImageFileToCustomQr(file, 'frame');
+      e.target.value = '';
+    });
+
+    document.getElementById('cqr-remove-frame-btn')?.addEventListener('click', () => {
+      state.customQr.frameImage = null;
+      state.customQr.frameFileName = '';
+      syncCustomQrInputsFromState();
+      renderCustomQrPreview();
+      showToast('Gambar latar bingkai dihapus.', 'success');
+    });
+
+    bindInput('cqr-frame-title', (e) => {
+      state.customQr.frameTitle = e.target.value;
+      renderCustomQrPreview();
+    });
+    bindInput('cqr-frame-subtitle', (e) => {
+      state.customQr.frameSubtitle = e.target.value;
+      renderCustomQrPreview();
+    });
+
+    document.querySelectorAll('#cqr-module-style-control .seg-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        state.customQr.moduleStyle = btn.dataset.moduleStyle;
+        syncCustomQrInputsFromState();
+        renderCustomQrPreview();
+      });
+    });
+
+    bindInput('cqr-fg-color', (e) => {
+      state.customQr.fgColor = e.target.value;
+      const hex = document.getElementById('cqr-fg-hex');
+      if (hex) hex.textContent = e.target.value.toUpperCase();
+      renderCustomQrPreview();
+    });
+    bindInput('cqr-bg-color', (e) => {
+      state.customQr.bgColor = e.target.value;
+      const hex = document.getElementById('cqr-bg-hex');
+      if (hex) hex.textContent = e.target.value.toUpperCase();
+      renderCustomQrPreview();
+    });
+    bindInput('cqr-frame-color', (e) => {
+      state.customQr.frameColor = e.target.value;
+      const hex = document.getElementById('cqr-frame-hex');
+      if (hex) hex.textContent = e.target.value.toUpperCase();
+      renderCustomQrPreview();
+    });
+
+    document.getElementById('cqr-reset-btn')?.addEventListener('click', () => {
+      state.customQr = {
+        sourceType: 'wifi',
+        wifi: { ...state.wifi },
+        customText: 'https://myrep.example.com',
+        moduleStyle: 'square',
+        fgColor: '#0A192F',
+        bgColor: '#FFFFFF',
+        logoImage: null,
+        logoFileName: '',
+        logoShape: 'rounded',
+        logoSizePct: 22,
+        logoPad: 6,
+        frameEnabled: false,
+        frameImage: null,
+        frameFileName: '',
+        frameTitle: 'SCAN WIFI MY REP',
+        frameSubtitle: 'Connect Smarter, Stay Connected.',
+        frameColor: '#2563EB',
+      };
+      syncCustomQrInputsFromState();
+      renderCustomQrPreview();
+      showToast('Custom QR Studio direset ke pengaturan awal.', 'success');
+    });
+
+    document.getElementById('cqr-download-png-btn')?.addEventListener('click', () => {
+      const payload = getCustomQrPayload();
+      const matrix = generateQrMatrix(payload, 'H');
+      const hiRes = document.createElement('canvas');
+      drawStyledQrToCanvas(hiRes, matrix, state.customQr, 1080);
+      const slug =
+        state.customQr.sourceType === 'wifi'
+          ? (state.customQr.wifi.ssid || 'wifi').toLowerCase().replace(/[^a-z0-9]+/g, '-')
+          : 'custom';
+      triggerCanvasDownload(hiRes, `myrep-custom-qr-${slug}.png`);
+      showToast('Custom QR resolusi tinggi (PNG) berhasil diunduh.', 'success');
+    });
+
+    document.getElementById('cqr-apply-designer-btn')?.addEventListener('click', () => {
+      if (state.customQr.sourceType === 'wifi' && state.customQr.wifi.ssid.trim()) {
+        state.wifi = { ...state.customQr.wifi };
+      }
+      state.designer.useCustomQr = true;
+      regenerateActiveQrFromWifi();
+      switchView('voucher-designer');
+      showToast('Gaya Custom QR Studio diterapkan ke Kartu Voucher!', 'success');
+    });
+
+    // =====================================================================
+    // Panel Admin Event Bindings
+    // =====================================================================
+
+    document.querySelectorAll('[data-admin-tab]').forEach((tabBtn) => {
+      tabBtn.addEventListener('click', () => {
+        const target = tabBtn.dataset.adminTab;
+        document.querySelectorAll('[data-admin-tab]').forEach((b) => {
+          const active = b.dataset.adminTab === target;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-selected', String(active));
+        });
+        document.querySelectorAll('.admin-tab-panel').forEach((panel) => {
+          panel.classList.toggle('is-active', panel.id === `admin-panel-${target}`);
+        });
+      });
+    });
+
+    document.getElementById('admin-unlock-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pinInput = document.getElementById('admin-unlock-pin-input');
+      const errEl = document.getElementById('err-admin-unlock');
+      if (errEl) errEl.textContent = '';
+
+      const entered = (pinInput?.value || '').trim();
+      const hashed = await hashPin(entered);
+      if (hashed === state.adminConfig.pinHash) {
+        state.adminUnlocked = true;
+        if (pinInput) pinInput.value = '';
+        refreshAdminAccessView();
+        showToast('Panel Admin berhasil dibuka.', 'success');
+      } else {
+        if (errEl) errEl.textContent = 'PIN Admin tidak sesuai. Silakan periksa kembali.';
+      }
+    });
+
+    document.getElementById('admin-lock-btn')?.addEventListener('click', () => {
+      if (!state.adminConfig.pinHash) return;
+      state.adminUnlocked = false;
+      refreshAdminAccessView();
+      showToast('Panel Admin dikunci kembali.', 'success');
+    });
+
+    document.getElementById('admin-product-form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('admin-prod-id').value.trim();
+      const name = document.getElementById('admin-prod-name').value.trim();
+      const duration = document.getElementById('admin-prod-duration').value.trim();
+      const price = document.getElementById('admin-prod-price').value.trim();
+      const codePrefix = document.getElementById('admin-prod-prefix').value.trim();
+      const description = document.getElementById('admin-prod-desc').value.trim();
+      const active = document.getElementById('admin-prod-active').checked;
+
+      if (!name || !duration || !price) {
+        showToast('Nama paket, durasi, dan harga wajib diisi.', 'error');
+        return;
+      }
+
+      if (id) {
+        const idx = state.adminConfig.products.findIndex((p) => p.id === id);
+        if (idx >= 0) {
+          state.adminConfig.products[idx] = {
+            id,
+            name,
+            duration,
+            price,
+            codePrefix,
+            description,
+            active,
+          };
+          showToast(`Paket "${name}" berhasil diperbarui.`, 'success');
+        }
+      } else {
+        state.adminConfig.products.push({
+          id: `prod_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          name,
+          duration,
+          price,
+          codePrefix,
+          description,
+          active,
+        });
+        showToast(`Paket baru "${name}" berhasil ditambahkan.`, 'success');
+      }
+
+      saveAdminConfig();
+      resetAdminProductForm();
+      renderAdminProductList();
+      renderPackagePresets();
+    });
+
+    document.getElementById('admin-prod-cancel-btn')?.addEventListener('click', resetAdminProductForm);
+
+    // Sync color pickers automatically when default template dropdown changes in Admin
+    document.getElementById('admin-def-template')?.addEventListener('change', (e) => {
+      const tpl = TEMPLATES[e.target.value];
+      if (!tpl) return;
+      document.getElementById('admin-def-bg').value = tpl.bg;
+      document.getElementById('admin-def-text').value = tpl.text;
+      document.getElementById('admin-def-accent').value = tpl.accent;
+      document.getElementById('admin-hex-bg').textContent = tpl.bg.toUpperCase();
+      document.getElementById('admin-hex-text').textContent = tpl.text.toUpperCase();
+      document.getElementById('admin-hex-accent').textContent = tpl.accent.toUpperCase();
+    });
+
+    bindInput('admin-def-bg', (e) => {
+      const hex = document.getElementById('admin-hex-bg');
+      if (hex) hex.textContent = e.target.value.toUpperCase();
+    });
+    bindInput('admin-def-text', (e) => {
+      const hex = document.getElementById('admin-hex-text');
+      if (hex) hex.textContent = e.target.value.toUpperCase();
+    });
+    bindInput('admin-def-accent', (e) => {
+      const hex = document.getElementById('admin-hex-accent');
+      if (hex) hex.textContent = e.target.value.toUpperCase();
+    });
+
+    document.getElementById('admin-display-form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      state.adminConfig.displayDefaults = {
+        theme: document.getElementById('admin-def-theme').value,
+        templateId: document.getElementById('admin-def-template').value,
+        voucherName: document.getElementById('admin-def-voucher-name').value.trim() || 'MY REP WIFI',
+        outletLabel: document.getElementById('admin-def-outlet').value.trim(),
+        qrPosition: document.getElementById('admin-def-qr-pos').value,
+        textSize: document.getElementById('admin-def-text-size').value,
+        defaultDescription:
+          document.getElementById('admin-def-desc').value.trim() || DEFAULT_DESIGNER.description,
+        customBg: document.getElementById('admin-def-bg').value,
+        customText: document.getElementById('admin-def-text').value,
+        customAccent: document.getElementById('admin-def-accent').value,
+        showPrice: document.getElementById('admin-def-show-price').checked,
+        showPassword: document.getElementById('admin-def-show-pass').checked,
+        showCode: document.getElementById('admin-def-show-code').checked,
+      };
+      saveAdminConfig();
+      applyAdminDefaultsToApp(true);
+      syncDesignerInputsFromState();
+      renderDesignerLivePreview();
+      renderDashboardSample();
+      showToast('Pengaturan tampilan & default berhasil disimpan dan diterapkan.', 'success');
+    });
+
+    document.getElementById('admin-print-pin-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const format = document.getElementById('admin-def-print-format').value;
+      const a4Copies = Number(document.getElementById('admin-def-a4-copies').value) || 8;
+      const newPin = document.getElementById('admin-new-pin').value.trim();
+
+      if (newPin) {
+        if (!/^\d{4,6}$/.test(newPin)) {
+          showToast('PIN Admin harus berupa 4 hingga 6 digit angka.', 'error');
+          return;
+        }
+        state.adminConfig.pinHash = await hashPin(newPin);
+        state.adminUnlocked = true;
+      }
+
+      state.adminConfig.printDefaults = { format, a4Copies };
+      saveAdminConfig();
+      applyAdminDefaultsToApp(false);
+      refreshAdminAccessView();
+      showToast(
+        newPin
+          ? 'Preferensi cetak & PIN Admin berhasil disimpan.'
+          : 'Preferensi cetak default berhasil disimpan.',
+        'success'
+      );
+    });
+
+    document.getElementById('admin-disable-pin-btn')?.addEventListener('click', () => {
+      openConfirmationModal(
+        'Nonaktifkan PIN Admin',
+        'Akses Panel Admin akan terbuka langsung dari sidebar tanpa meminta PIN. Lanjutkan?',
+        () => {
+          state.adminConfig.pinHash = '';
+          state.adminUnlocked = true;
+          saveAdminConfig();
+          refreshAdminAccessView();
+          showToast('PIN Admin dinonaktifkan.', 'success');
+        }
+      );
+    });
+
+    document.getElementById('admin-export-json-btn')?.addEventListener('click', exportAdminConfigToJson);
+    document.getElementById('admin-export-json-btn-2')?.addEventListener('click', exportAdminConfigToJson);
+
+    document.getElementById('admin-import-json-input')?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) importAdminConfigFromFile(file);
+      e.target.value = '';
+    });
+
+    document.getElementById('admin-factory-reset-btn')?.addEventListener('click', () => {
+      openConfirmationModal(
+        'Reset Pengaturan Admin',
+        'Seluruh katalog produk custom, tampilan default, dan PIN lokal akan dikembalikan ke pengaturan awal MY REP. Lanjutkan?',
+        () => {
+          state.adminConfig = JSON.parse(JSON.stringify(DEFAULT_ADMIN_CONFIG));
+          state.adminUnlocked = true;
+          saveAdminConfig();
+          applyAdminDefaultsToApp(true);
+          renderPackagePresets();
+          refreshAdminAccessView();
+          syncDesignerInputsFromState();
+          renderDesignerLivePreview();
+          showToast('Pengaturan Panel Admin dikembalikan ke default awal.', 'success');
+        }
+      );
+    });
 
     // Print Modal Events
     document.getElementById('open-print-modal-btn')?.addEventListener('click', openPrintModal);
@@ -2146,20 +3530,28 @@
   }
 
   function init() {
-    let savedTheme = 'light';
+    loadAdminConfig();
+
+    let savedTheme = state.adminConfig.displayDefaults?.theme || 'light';
     try {
-      savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) || 'light';
+      const storedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
+      if (storedTheme) savedTheme = storedTheme;
     } catch (_err) {
-      savedTheme = 'light';
+      // keep admin default
     }
     applyTheme(savedTheme);
+    applyAdminDefaultsToApp(false);
 
     regenerateActiveQrFromWifi();
     bindEvents();
+    renderPackagePresets();
     syncQrInputsFromState();
     syncDesignerInputsFromState();
+    syncCustomQrInputsFromState();
     renderStandaloneQrPreview();
     renderDesignerLivePreview();
+    renderCustomQrPreview();
+    refreshAdminAccessView();
     refreshDashboardStats();
     renderDashboardSample();
     refreshHistoryView();
